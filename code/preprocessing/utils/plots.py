@@ -25,50 +25,37 @@ def normalize(mean, std):
 
 
 
-def plot_z_profile(n_z, p_z, stack, p, z_0):
+def plot_z_profile(n_z, stack, z_0):
     '''
     Plot to illustrate estimation of zero-level. Plotting refrative index and MlM-probability along z-axis, as well as their derivatives.
     n_z and p_z are two dimension arrays, with [0] being n and p along z, and [1] being their derivatives.
     '''
-    mean_n = np.mean(n_z[0], axis=0)
-    mean_p = np.mean(p_z[0],  axis=0)
-
+    mean_n  = np.mean(n_z[0], axis=0)
     mean_dn = np.mean(n_z[1], axis=0)
-    mean_dp = np.mean(p_z[1],  axis=0)
 
-    std_n = np.std(n_z[0], axis=0)
-    std_p = np.std(p_z[0],  axis=0)
-
+    std_n  = np.std(n_z[0], axis=0)
     std_dn = np.std(n_z[1], axis=0)
-    std_dp = np.std(p_z[1],  axis=0)
 
-    mean_n, std_n = normalize(mean_n,   std_n)
-    mean_p, std_p = normalize(mean_p, std_p)
-
-    mean_dn, std_dn = normalize(mean_dn,   std_dn)
-    mean_dp, std_dp = normalize(mean_dp, std_dp)
+    mean_n,  std_n  = normalize(mean_n,  std_n)
+    mean_dn, std_dn = normalize(mean_dn, std_dn)
 
     xz_mean = np.mean(stack, axis=2)
     yz_mean = np.mean(stack, axis=1)
 
-    pxz_mean = np.mean(p, axis=2)
-    pyz_mean = np.mean(p, axis=1)
 
     mosaic = [['mean', 'dmean', 'xz'], 
-              ['mean', 'dmean', 'pxz'], 
+              ['mean', 'dmean', 'xz'], 
               ['mean', 'dmean', 'yz'],
-              ['mean', 'dmean', 'pyz']]
+              ['mean', 'dmean', 'yz']]
     fig, ax = plt.subplot_mosaic(mosaic)#, sharey=True)
 
     z0 = np.arange(len(mean_n))
     z1 = np.arange(len(mean_dn))
 
     ax['mean'].errorbar(mean_n, z0, xerr=std_n, color="c", label="n")
-    ax['mean'].errorbar(mean_p, z0, xerr=std_p, color="k", label=r"$p_{MlM}$")
     ax['mean'].hlines(z_0, 0, 1, 'r',ls="dashed", label=r"$z_0$")
 
     ax['dmean'].errorbar(mean_dn, z1, xerr=std_dn, color="c", label="n")
-    ax['dmean'].errorbar(mean_dp, z1, xerr=std_dp, color="k", label=r"$p_{MlM}$")
     ax['dmean'].hlines(z_0, 0, 1, 'r', ls="dashed", label=r"$z_0$")
 
     ax['mean'].set(ylabel="z [voxel]", title="Mean along z")
@@ -82,19 +69,9 @@ def plot_z_profile(n_z, p_z, stack, p, z_0):
 
     ax['xz'].set(title=r"$\langle n(x,y,z) \rangle_y$")
     ax['yz'].set(title=r"$\langle n(x,y,z) \rangle_x$")
-    
-    ax['pxz'].imshow(pxz_mean, origin="lower", aspect="auto")
-    ax['pyz'].imshow(pyz_mean, origin="lower", aspect="auto")
-    ax['pxz'].hlines(z_0, 0, len(pxz_mean[0])-1, 'r', lw=1, ls="dashed")
-    ax['pyz'].hlines(z_0, 0, len(pyz_mean[0])-1, 'r', lw=1, ls="dashed")
-
-    ax['pxz'].set(title=r"$\langle p_{MlM}(x,y,z) \rangle_y$")
-    ax['pyz'].set(title=r"$\langle p_{MlM}(x,y,z) \rangle_x$")
 
     ax['xz'].set_axis_off()
     ax['yz'].set_axis_off()
-    ax['pxz'].set_axis_off()
-    ax['pyz'].set_axis_off()
     
 
     fig.tight_layout()

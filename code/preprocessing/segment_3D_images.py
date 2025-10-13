@@ -73,10 +73,10 @@ with open(logfile, "a") as log:
     # sort by experiment
     for exp in experiment:
         print(exp)
-        ri_z_list     = []
-        prob_z_list   = []
-        dri_dz_list   = []
-        dprob_dz_list = []
+        ri_xz_list   = []
+        ri_yz_list   = []
+        dri_xdz_list = []
+        dri_ydz_list = []
 
         sum_above = np.zeros_like(thresholds)
         sum_below = np.zeros_like(thresholds)
@@ -94,20 +94,20 @@ with open(logfile, "a") as log:
             cell_prob = MlM_probabilities[:,:,:,1]
 
             # compute mean and derivative of mean along z
-            ri_z   = np.mean(stack,     axis=(1,2))
-            prob_z = np.mean(cell_prob, axis=(1,2))
-            dri_dz   = np.diff(ri_z)   + 1
-            dprob_dz = np.diff(prob_z) + 1
+            ri_xz   = np.mean(stack, axis=1)
+            ri_yz   = np.mean(stack, axis=2)
+            dri_xdz = np.diff(ri_xz, axis=0) + 1
+            dri_ydz = np.diff(ri_yz, axis=0) + 1
 
             # add to list for experiment
-            ri_z_list.append(ri_z)
-            prob_z_list.append(prob_z)
-            dri_dz_list.append(dri_dz)
-            dprob_dz_list.append(dprob_dz)
+            ri_xz_list.append(ri_xz)
+            ri_yz_list.append(ri_yz)
+            dri_xdz_list.append(dri_xdz)
+            dri_ydz_list.append(dri_ydz)
         
         # compute zero level. same for entire experiment
-        z_0 = estimate_cell_bottom(dri_dz_list)
-        fig = plot_z_profile([ri_z_list, dri_dz_list], [prob_z_list, dprob_dz_list], stack, cell_prob, z_0)
+        z_0 = estimate_cell_bottom(dri_xdz_list, dri_xdz_list)
+        fig = plot_z_profile([ri_xz_list, dri_xdz_list], stack, z_0)
         fig.savefig(f"{mhds_dir}{os.sep}{Path(exp).name}_zero_level.png", dpi=300)
         print(f"zero-level: {z_0}\n")
 

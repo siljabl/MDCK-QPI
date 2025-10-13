@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi
 from skimage import measure, draw
 from skimage import morphology as morph
+
+from skimage.filters import gaussian
 from skimage.segmentation import watershed, clear_border
 
 n0 = 1.33
@@ -20,17 +22,17 @@ def get_pixel_size():
     return np.array([567 / 1024, 567 / 1024])
 
 
-def smoothen_normalize_im(n_im, s_low, s_high, fig=False):
+def smoothen_normalize_im(n_im, s_high, s_low, fig=False):
     '''
     Smoothens image using Gaussian blur and then normalizes it with respect to lowest refractive index within cells.
     I.e. avoids being dominated by empty areas.
     '''
     n_copy = np.copy(n_im)
     n_copy[n_copy == 0] = np.mean(n_copy)
-    n_low_pass  = sc.ndimage.gaussian_filter(n_copy, s_low)
-    n_high_pass = sc.ndimage.gaussian_filter(n_copy, s_high)
+    n_high_pass  = gaussian(n_copy, s_high)
+    n_low_pass = gaussian(n_copy, s_low)
 
-    n_norm = n_low_pass - n_high_pass
+    n_norm = n_high_pass - n_low_pass
     n_norm = ((n_norm - n_norm.min()) / (n_norm.max() - n_norm.min()))
     n_norm[n_im == 0] = 0
 
@@ -38,14 +40,14 @@ def smoothen_normalize_im(n_im, s_low, s_high, fig=False):
     if fig:
         fig, ax = plt.subplots(1,4, figsize=(12, 4))
         ax[0].imshow(n_im.T, origin="lower", vmin=1.33)
-        ax[1].imshow(n_low_pass.T, origin="lower")
-        ax[2].imshow(n_high_pass.T, origin="lower")
+        ax[1].imshow(n_high_pass.T, origin="lower")
+        ax[2].imshow(n_low_pass.T, origin="lower")
         ax[3].imshow(n_norm.T, origin="lower")
 
         ax[0].set(title="raw image")
-        ax[1].set(title=f"sigma = {s_low}")
-        ax[2].set(title=f"sigma = {s_high}")
-        ax[3].set(title="low - high")
+        ax[1].set(title=f"sigma = {s_high}")
+        ax[2].set(title=f"sigma = {s_low}")
+        ax[3].set(title="high - low")
         fig.tight_layout()
         #fig.savefig("normalization.png")
 
@@ -117,7 +119,6 @@ def get_cell_areas(im, pos, h_im, clear_edge=True):
     # get cell areas with watershed
     seeds = generate_seed_mask(pos, im.shape)
     areas = watershed(im, seeds, watershed_line=False, connectivity=1)
-    edges = watershed(im, seeds, watershed_line=True,  connectivity=1)
 
 
     # remove empty areas
@@ -130,9 +131,7 @@ def get_cell_areas(im, pos, h_im, clear_edge=True):
     if clear_edge:
         cell_areas = clear_border(cell_areas)
 
-    cell_edges = (edges == 0)
-
-    return cell_areas, cell_edges
+    return cell_areas
 
 
 # def compute_polarization(reg_props):
@@ -155,8 +154,9 @@ def compute_cell_props(label_im, pos, h_im, n_im, xy_to_um, type='holomonitor'):
     # Set conversion from pixel to um depending on type of data
     labels = []
     minor_axis, major_axis = [], []
-    h_mean, h_max, n_mean = [], [], []
+    h_mean, h_max, n_mean  = [], [], []
     area, perimeter, volume = [], [], []
+    orientation, eccentricity = [], []
 
     reg_prop = measure.regionprops(label_im, n_im)
 
@@ -182,6 +182,8 @@ def compute_cell_props(label_im, pos, h_im, n_im, xy_to_um, type='holomonitor'):
         h_mean.append(np.sum(mask*h_im) / np.sum(mask))
         minor_axis.append(reg_prop[i].axis_minor_length)
         major_axis.append(reg_prop[i].axis_major_length)
+        orientation.append(reg_prop[i].orientation)
+        eccentricity.append(reg_prop[i].eccentricity)
 
         labels.append(label)    # why not l?
         h_max.append(np.max(mask*h_im))
@@ -197,7 +199,9 @@ def compute_cell_props(label_im, pos, h_im, n_im, xy_to_um, type='holomonitor'):
                               'A': np.array(area)           * xy_to_um**2, 
                               'V': np.array(volume)         * xy_to_um**2,
                               'a_min': np.array(minor_axis) * xy_to_um,
-                              'a_max': np.array(major_axis) * xy_to_um, 
+                              'a_max': np.array(major_axis) * xy_to_um,
+                              'theta': np.array(orientation),
+                              'ecc':   np.array(eccentricity),
                               'h_avrg': np.array(h_mean),
                               'n_avrg': np.array(np.zeros_like(h_mean)),
                               'h_max': np.array(h_max),

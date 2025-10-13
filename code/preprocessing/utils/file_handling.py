@@ -1,7 +1,9 @@
 import os
+import sys
 import imageio
 import numpy as np
 
+sys.path.append("code/preprocessing/utils")
 from pathlib import Path
 from segment3D import get_voxel_size_35mm
 

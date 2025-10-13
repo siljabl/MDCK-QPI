@@ -1,10 +1,14 @@
 """
 Script to plot frames that illustrates data analysis
+func:
+- cell_detection
+
 """
 
 import os
 import sys
 import json
+import pickle
 import imageio
 import argparse
 import numpy as np
@@ -51,11 +55,12 @@ def plot_cell_detection(ax, frame, pos, vmin=0, vmax=20, label='h (µm)'):
     vmax:  max intensity on heatmap
     """
 
-    sns.heatmap(frame.T, ax=ax, square=True, cmap="gray", vmin=vmin, vmax=vmax, 
+    sns.heatmap(frame, ax=ax, square=True, cmap="gray", vmin=vmin, vmax=vmax, 
                 xticklabels=False, yticklabels=False, cbar=True, cbar_kws={'label':label})
     
-    ax.plot(pos[0], pos[1], 'r.', ms=5)
-    ax.set(title=f"#cells: {np.sum(pos[0].mask==False)}")
+    ax.plot(pos.T[1], pos.T[0], 'r.', ms=5)
+    ax.set(title=f"#cells: {len(pos)}")
+    #ax.set(title=f"#cells: {np.sum(pos[0].mask==False)}")
 
 
 
@@ -86,6 +91,7 @@ def main():
     parser.add_argument("path",     type=str,  help="Path to data folder")
     parser.add_argument("func",     type=str,  help="Plotting function")
     parser.add_argument("-edges",   type=bool, help="Plot edges", default=False)
+    parser.add_argument("--raw", action="store_true", help="plotting raw result in stead of final")
     args = parser.parse_args()
 
 
@@ -102,9 +108,14 @@ def main():
 
     # Load data
     config   = json.load(open(f"data/experimental/configs/{dataset}.json"))
-    cellprop = SegmentationData(f"data/experimental/processed/{dataset}/cell_props.p")
     fmin     = config['segmentation']['fmin']
-    Nframes  = len(cellprop.x)
+    if args.raw:
+        with open(f"data/experimental/processed/{dataset}/raw_cell_props.p", 'rb') as f:
+            cellprop = pickle.load(f)
+        Nframes  = len(cellprop)
+    else:
+        cellprop = SegmentationData(f"data/experimental/processed/{dataset}/cell_props.p")
+        Nframes  = len(cellprop.x)
 
 
     # Define path for output
@@ -138,7 +149,12 @@ def main():
 
         if args.func == "cell_detection":
 
-            plot_cell_detection(ax, im, [cellprop.x[frame] / pix_to_um[1], cellprop.y[frame] / pix_to_um[1]], vmin=vmin, vmax=vmax)
+            if args.raw:
+                positions = np.array([cell.centroid_weighted for cell in cellprop[frame]])
+            else:
+                positions = [cellprop.x[frame] / pix_to_um[1], cellprop.y[frame] / pix_to_um[1]]
+
+            plot_cell_detection(ax, im, positions, vmin=vmin, vmax=vmax)
 
 
         elif args.func == "cell_height":
@@ -160,14 +176,19 @@ def main():
             print("Error: func not recognized.")
 
 
+
         # add scalebar
         sb = ScaleBar(pix_to_um[-1], 'um', box_alpha=0, color="w", height_fraction=2e-2, scale_loc="none", fixed_value=100)
         sb.location = 'lower left'
         ax.add_artist(sb)
 
         # save
+        if args.raw:
+            prefix = "raw_"
+        else:
+            prefix = ""
         fig.tight_layout()
-        plt.savefig(f"{outdir}/frame_{frame}.png", dpi=300);
+        plt.savefig(f"{outdir}/{prefix}frame_{frame}.png", dpi=300);
         plt.close()
 
 

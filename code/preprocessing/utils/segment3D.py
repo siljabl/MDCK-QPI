@@ -23,17 +23,22 @@ def scale_refractive(n_z):
 
 
 
-def estimate_cell_bottom(dn_dz):
+def estimate_cell_bottom(dn_xdz, dn_ydz):
     '''
     Estimates first z-slice with cells.
     Assumes it is where derivative of refractive index is max.
     dn_dz = np.diff(np.mean(n, axis=(1,2))), i.e. the derivative along z of the mean refractive index of each stack
     '''
 
-    dn_dz_mean = np.mean(dn_dz, axis=0)
-    z_0 = np.argmax(dn_dz_mean)
+    dn_xdz_mean = np.mean(dn_xdz, axis=0)
+    dn_ydz_mean = np.mean(dn_ydz, axis=0)
 
-    return z_0
+    z0_x = np.argmax(dn_xdz_mean, axis=0)
+    z0_y = np.argmax(dn_ydz_mean, axis=0)
+    z0_X, z0_Y = np.meshgrid(z0_x, z0_y)
+    z0 = (z0_X + z0_Y) / 2
+
+    return z0
 
 
 

@@ -136,11 +136,15 @@ with open(logfile, "a") as log:
             log.write(f'{file.name}, {z_0}, {threshold}, {args.r1_min}, {args.r1_max}, {args.r2}\n')
 
             # filter mask
-            tmp_mask = median(cell_pred[z_0:], kernel_1)
+            tmp_mask = median(cell_pred[np.min(z_0):], kernel_1)
             tmp_mask = median(tmp_mask,  kernel_2)
+
+            # make mask with heterogeneous zero-level
             cell_mask = np.zeros_like(cell_pred)
-            cell_mask[z_0] = 1
-            cell_mask[z_0+1:] = tmp_mask
+            for i in range(len(stack[0])):
+                for j in range(len(stack[0,0])):
+                    cell_mask[:int(z_0[i,j]),i,j] = 0
+                    cell_mask[i,j] *= tmp_mask[i,j]
             
             # save mask
             basename = file.stem.split('_prob')[0]

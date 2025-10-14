@@ -154,7 +154,7 @@ def main():
         if args.func == "cell_detection":
 
             if args.raw:
-                cellprop  = regionprops(im_cell_areas[frame], im)
+                cellprop  = regionprops(im_cell_areas[frame], im[:, :3200])
                 positions = np.array([cell.centroid_weighted for cell in cellprop])
             else:
                 positions = [cellprop.x[frame] / pix_to_um[1], cellprop.y[frame] / pix_to_um[1]]

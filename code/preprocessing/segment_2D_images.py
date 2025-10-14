@@ -88,8 +88,8 @@ for i in tqdm(range(Nframes)):
         h_im = imageio.v2.imread(f"data/experimental/raw/{dataset}/MDCK-li_reg_zero_corr_fluct_{fmin+i}.tiff") / 100
         n_im = np.copy(h_im)
     else:
-        n_im = imageio.v2.imread(f"data/experimental/raw/{dataset}/MDCK-li_refractive_index_{fmin+i}.tiff")[:, :3200] / 10_000
-        h_im = imageio.v2.imread(f"data/experimental/raw/{dataset}/MDCK-li_height_{fmin+i}.tiff")[:, :3200] / pix_to_um[0]
+        n_im = imageio.v2.imread(f"data/experimental/raw/{dataset}/MDCK-li_refractive_index_{fmin+i}.tiff") / 10_000
+        h_im = imageio.v2.imread(f"data/experimental/raw/{dataset}/MDCK-li_height_{fmin+i}.tiff") / pix_to_um[0]
 
    
     # smoothen image and remove large scale variation
@@ -107,7 +107,9 @@ for i in tqdm(range(Nframes)):
     particle_size = config['segmentation']['particle_size'] * 2 ** (-i / (2*config['segmentation']['tau'] / frame_to_h))
     pos = np.array(peak_local_max(n_norm, min_distance=int(np.round(particle_size))))
 
-    pos = pos[pos[:,0]>100]
+    # remove non-confluent areas
+    pos = pos[(pos[:,1] > config['segmentation']['xmin']) * (pos[:,1] < config['segmentation']['xmin'])]
+    pos = pos[(pos[:,0] > config['segmentation']['ymin']) * (pos[:,0] < config['segmentation']['ymin'])]
 
     # segment cell areas using watershed
     if microscope == 'tomocube':

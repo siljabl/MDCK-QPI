@@ -17,7 +17,7 @@ from pathlib import Path
 # Avoid localhost error on my machine
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-#mpl.use('Agg')
+mpl.use('Agg')
 
 sys.path.append("code/analysis")
 from utils.data_class import SegmentationData
@@ -28,11 +28,10 @@ from file_handling import *
 
 
 
-def plot_cell_number(cellprop, dataset, frame_to_h = 1/12, savefig=True):
+def plot_cell_number(Ncells, dataset, frame_to_h = 1/12, savefig=True):
     """ Plot global cell density """
 
-    Ncells = [len(cells) for cells in cellprop]
-    hour = np.arange(len(cellprop)) * frame_to_h
+    hour = np.arange(len(Ncells)) * frame_to_h
 
     plt.figure(figsize=(6, 4), dpi=300)
     plt.xlabel("t (h)")
@@ -82,7 +81,8 @@ def main():
     assert args.param in param_list, f"Must chose parameter among {param_list}."
 
     # Make ouput dir
-    dataset = Path(args.path).stem
+    dataset    = Path(args.path).stem
+    microscope = dataset.split("_")[0]
     Path(f"results/{dataset}/").mkdir(parents=True, exist_ok=True)  
 
     # Plot global cell density
@@ -93,10 +93,24 @@ def main():
 
     # Plot total number of cells
     if args.param == "number":
-        with open(f"data/experimental/processed/{dataset}/raw_cell_props.p", 'rb') as f:
-            cellprop = pickle.load(f)
+        im_cell_areas = np.load(f"data/experimental/processed/{dataset}/im_cell_areas.npy")
 
-        plot_cell_number(cellprop, dataset)
+        if microscope == "holomonitor":
+            # with open(f"data/experimental/processed/{dataset}/raw_cell_props.p", 'rb') as f:
+            #     cellprop = pickle.load(f)
+
+            frame_to_h = 1/12
+        else:
+            # with open(f"data/experimental/processed/{dataset}/raw_cell_props_0-20.p", 'rb') as f:
+            #     cellprop = pickle.load(f)
+
+            # with open(f"data/experimental/processed/{dataset}/raw_cell_props_21-40.p", 'rb') as f:
+            #     cellprop.append(pickle.load(f))
+
+            frame_to_h = 1/4
+
+        Ncells = [len(np.unique(im_area))-1 for im_area in im_cell_areas]
+        plot_cell_number(Ncells, dataset, frame_to_h)
 
     # Plot mean intensity/height
     if args.param == "intensity" or args.param == "height":
@@ -104,7 +118,7 @@ def main():
         #data = SegmentationData(f"data/experimental/processed/{dataset}/cell_props.p")
 
         # if microscope == 'holomonitor':
-        stack = import_holomonitor_stack(f"data/experimental/raw/{dataset}/ZeroCorr/", 
+        stack = import_holomonitor_stack(f"data/experimental/raw/{dataset}/", 
                                         f_min=config['segmentation']['fmin'],
                                         f_max=config['segmentation']['fmax'])
         

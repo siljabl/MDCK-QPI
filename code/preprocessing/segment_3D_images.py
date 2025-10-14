@@ -108,7 +108,9 @@ with open(logfile, "a") as log:
         # compute zero level. same for entire experiment
         z_0 = estimate_cell_bottom(dri_xdz_list, dri_xdz_list)
         z_0 = median(z_0, disk(3))
-        fig = plot_z_profile([ri_xz_list, dri_xdz_list], stack, z_0)
+        fig = plt.imshow(z_0)
+        plt.colorbar()
+        #fig = plot_z_profile([ri_xz_list, dri_xdz_list], stack, z_0)
         fig.savefig(f"{mhds_dir}{os.sep}{Path(exp).name}_zero_level.png", dpi=300)
         print(f"zero-level: {z_0}\n")
 

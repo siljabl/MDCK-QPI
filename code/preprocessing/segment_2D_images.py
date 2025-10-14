@@ -42,17 +42,17 @@ microscope = Path(args.path).stem.split("_")[0]
 
 
 # check if config exists and load
-fname = Path(args.path).stem
-Path(f"{processed_path}{fname}").mkdir(parents=True, exist_ok=True)
+dataset = Path(args.path).stem
+Path(f"{processed_path}{dataset}").mkdir(parents=True, exist_ok=True)
 
 
 try:
-    with open(f"data/experimental/configs/{fname}.json", 'r') as f:
+    with open(f"data/experimental/configs/{dataset}.json", 'r') as f:
         config = json.load(f)
         config['segmentation']['date'] = datetime.today().strftime('%Y-%m-%d')
-        print(f"Loading configs from data/experimental/configs/{fname}.json")
+        print(f"Loading configs from data/experimental/configs/{dataset}.json")
 except:
-    print(f"Found no config file at data/experimental/configs/{fname}.json")
+    print(f"Found no config file at data/experimental/configs/{dataset}.json")
     config = {'segmentation': {
                 'date':   datetime.today().strftime('%Y-%m-%d'),
                 'fmin':   args.fmin,
@@ -62,67 +62,66 @@ except:
                 'tau':    args.tau,
                 'particle_size':   args.psize}
 }
-
+fmin = config['segmentation']['fmin']
+fmax = config['segmentation']['fmax']
+Nframes = fmax - fmin + 1
 
 if microscope == 'holomonitor':
     pix_to_um  = get_pixel_size()
     frame_to_h = 1 / 12
-    h_im = import_holomonitor_stack(args.path, 
-                                    f_min=config['segmentation']['fmin'],
-                                    f_max=config['segmentation']['fmax'])[:, :940, :940]
-    n_im = np.copy(h_im)
 
 elif microscope == 'tomocube':
     pix_to_um = get_voxel_size_35mm()
     frame_to_h = 1 / 4
-    n_im, h_im = import_tomocube_stack(args.path, 
-                                       h_scaling=pix_to_um[0], 
-                                       f_min=config['segmentation']['fmin'], 
-                                       f_max=config['segmentation']['fmax'])
 
-# empty arrays for storing data--bio",  "
+# empty arrays for storing data
 cells_df = pd.DataFrame()
 im_areas = []
 regprops = []
 
-# linear array of H for imextendmax
-#H_arr = np.linspace(config['segmentation']['Hmax'],        config['segmentation']['Hmin'],      len(h_im), endpoint=True)
-#s_arr = np.linspace(config['segmentation']['s_low_start'], config['segmentation']['s_low_end'], len(h_im), endpoint=True)
-
 
 # segment cells in each frame
-for i in tqdm(range(len(h_im))):
-    
+for i in tqdm(range(Nframes)):
+
+    # import frame
+    if microscope == "holomonitor":
+        h_im = imageio.v2.imread(f"data/experimental/raw/{dataset}/MDCK-li_reg_zero_corr_fluct_{fmin+i}.tiff") / 100
+        n_im = np.copy(h_im)
+    else:
+        n_im = imageio.v2.imread(f"data/experimental/raw/{dataset}/MDCK-li_refractive_index_{fmin+i}.tiff")[:, :3200] / 10_000
+        h_im = imageio.v2.imread(f"data/experimental/raw/{dataset}/MDCK-li_height_{fmin+i}.tiff")[:, :3200] / pix_to_um[0]
+
+   
     # smoothen image and remove large scale variation
     if args.enforce_confluency:
-        n_blur = np.copy(n_im[i])
+        n_blur = np.copy(n_im)
         n_blur[n_blur < 1.33] = 1.37 #np.mean(im_blur)
         n_blur = sc.ndimage.gaussian_filter(n_blur, 40)
 
-        n_im[i][n_im[i] < 1.33] = n_blur[n_im[i] < 1.33]
+        n_im[n_im < 1.33] = n_blur[n_im < 1.33]
 
-    n_norm = smoothen_normalize_im(n_im[i], config['segmentation']['s_high'], 
-                                            config['segmentation']['s_low'])
+    n_norm = smoothen_normalize_im(n_im, config['segmentation']['s_high'], 
+                                         config['segmentation']['s_low'])
 
     # estimate particle size from cell doubling time
     particle_size = config['segmentation']['particle_size'] * 2 ** (-i / (2*config['segmentation']['tau'] / frame_to_h))
     pos = np.array(peak_local_max(n_norm, min_distance=int(np.round(particle_size))))
 
-    #pos = pos[pos[:,0]>12]
+    pos = pos[pos[:,0]>100]
 
     # segment cell areas using watershed
     if microscope == 'tomocube':
-        n_norm = smoothen_normalize_im(n_im[i], 10, 15)
-    areas = get_cell_areas(-n_norm, pos, h_im[i], clear_edge=args.clear_edge)
+        n_norm = smoothen_normalize_im(n_im, 10, 15)
+    areas = get_cell_areas(-n_norm, pos, h_im, clear_edge=args.clear_edge)
 
     # save frame
-    regprops.append(regionprops(areas, h_im[i]))
+    regprops.append(regionprops(areas, h_im))
     im_areas.append(areas)
 
     #pos = update_pos(pos, areas)
 
     # compute cell properties
-    #tmp_df = compute_cell_props(areas, pos, h_im[i], n_im[i], pix_to_um[1], type=microscope)
+    #tmp_df = compute_cell_props(areas, pos, h_im, n_im, pix_to_um[1], type=microscope)
     #tmp_df['frame'] = i
 
     # save to df and list
@@ -131,18 +130,7 @@ for i in tqdm(range(len(h_im))):
 
 # filter out small cells
 #cells_df = cells_df[cells_df.A >= 100] # change
-#cells_df.to_csv(f"data/experimental/processed/{fname}/dataframe_unfiltered.csv", index=False)
+#cells_df.to_csv(f"data/experimental/processed/{dataset}/dataframe_unfiltered.csv", index=False)
 
-if microscope == "tomocube":
-    with open(f"{f"data/experimental/processed/{fname}/raw_cell_props_0-20.p"}", 'wb') as f: 
-        pickle.dump(regprops[0:], f)
-
-    with open(f"{f"data/experimental/processed/{fname}/raw_cell_props_21-40.p"}", 'wb') as f: 
-        pickle.dump(regprops[21:], f)
-
-else:
-    with open(f"{f"data/experimental/processed/{fname}/raw_cell_props.p"}", 'wb') as f: 
-            pickle.dump(regprops, f)
-
-np.save(f"data/experimental/processed/{fname}/im_cell_areas.npy", im_areas)
-json.dump(config, open(f"data/experimental/configs/{fname}.json", "w"))
+np.save(f"data/experimental/processed/{dataset}/im_cell_areas.npy", im_areas)
+json.dump(config, open(f"data/experimental/configs/{dataset}.json", "w"))

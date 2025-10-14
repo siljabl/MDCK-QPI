@@ -16,6 +16,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import skimage.morphology as morph
+from skimage.measure import regionprops
 
 # module_path = os.path.abspath(os.path.join(''))
 # if module_path not in sys.path:
@@ -109,13 +110,14 @@ def main():
     # Load data
     config   = json.load(open(f"data/experimental/configs/{dataset}.json"))
     fmin     = config['segmentation']['fmin']
+    fmax     = config['segmentation']['fmax']
+    Nframes  = fmax - fmin + 1
+
     if args.raw:
-        with open(f"data/experimental/processed/{dataset}/raw_cell_props.p", 'rb') as f:
-            cellprop = pickle.load(f)
-        Nframes  = len(cellprop)
+        im_cell_areas = np.load(f"data/experimental/processed/{dataset}/im_cell_areas.npy")
+
     else:
         cellprop = SegmentationData(f"data/experimental/processed/{dataset}/cell_props.p")
-        Nframes  = len(cellprop.x)
 
 
     # Define path for output
@@ -124,8 +126,12 @@ def main():
 
 
     # set value range
-    vmin = 0
-    vmax = 20
+    if microscope == "holomonitor":
+        vmin = 0
+        vmax = 20
+    else:
+        vmin = 1.33
+        vmax = 1.4
 
 
     # loop through frames
@@ -136,11 +142,9 @@ def main():
         if args.func == "cell_detection":# or args.func == "cell_velocity" or arg.
 
             if microscope == "holomonitor":
-                #im = import_holomonitor_stack(f"data/experimental/raw/{dataset}/", f_min=fmin + frame, f_max=fmin + frame)[0]
                 im = imageio.v2.imread(f"data/experimental/raw/{dataset}/MDCK-li_reg_zero_corr_fluct_{fmin+frame}.tiff") / 100
             else:
-                #im = import_tomocube_stack(f"data/experimental/raw/{dataset}/", h_scaling=pix_to_um[0], f_min=fmin + frame, f_max=fmin + frame)[0][0]
-                im = imageio.v2.imread(f"data/experimental/raw/{dataset}/MDCK-li_reg_zero_corr_fluct_{fmin+frame}.tiff") / pix_to_um[0]
+                im = imageio.v2.imread(f"data/experimental/raw/{dataset}/MDCK-li_refractive_index_{fmin+frame}.tiff") / 10_000
 
 
         
@@ -150,7 +154,8 @@ def main():
         if args.func == "cell_detection":
 
             if args.raw:
-                positions = np.array([cell.centroid_weighted for cell in cellprop[frame]])
+                cellprop  = regionprops(im_cell_areas[frame], im)
+                positions = np.array([cell.centroid_weighted for cell in cellprop])
             else:
                 positions = [cellprop.x[frame] / pix_to_um[1], cellprop.y[frame] / pix_to_um[1]]
 

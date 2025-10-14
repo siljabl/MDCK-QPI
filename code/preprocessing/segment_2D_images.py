@@ -77,7 +77,6 @@ elif microscope == 'tomocube':
 # empty arrays for storing data
 cells_df = pd.DataFrame()
 im_areas = []
-regprops = []
 
 
 # segment cells in each frame
@@ -108,31 +107,18 @@ for i in tqdm(range(Nframes)):
     pos = np.array(peak_local_max(n_norm, min_distance=int(np.round(particle_size))))
 
     # remove non-confluent areas
-    pos = pos[(pos[:,1] > config['segmentation']['xmin']) * (pos[:,1] < config['segmentation']['xmin'])]
-    pos = pos[(pos[:,0] > config['segmentation']['ymin']) * (pos[:,0] < config['segmentation']['ymin'])]
+    pos = pos[(pos[:,1] > config['segmentation']['xmin']) * (pos[:,1] < config['segmentation']['xmax'])]
+    pos = pos[(pos[:,0] > config['segmentation']['ymin']) * (pos[:,0] < config['segmentation']['ymax'])]
 
     # segment cell areas using watershed
     if microscope == 'tomocube':
-        n_norm = smoothen_normalize_im(n_im, 10, 15)
+        n_norm = smoothen_normalize_im(n_im, 20, 30)
     areas = get_cell_areas(-n_norm, pos, h_im, clear_edge=args.clear_edge)
 
     # save frame
-    regprops.append(regionprops(areas, h_im))
     im_areas.append(areas)
 
-    #pos = update_pos(pos, areas)
 
-    # compute cell properties
-    #tmp_df = compute_cell_props(areas, pos, h_im, n_im, pix_to_um[1], type=microscope)
-    #tmp_df['frame'] = i
-
-    # save to df and list
-    #cells_df = pd.concat([cells_df, tmp_df], ignore_index=True)
-
-
-# filter out small cells
-#cells_df = cells_df[cells_df.A >= 100] # change
-#cells_df.to_csv(f"data/experimental/processed/{dataset}/dataframe_unfiltered.csv", index=False)
-
+# save output
 np.save(f"data/experimental/processed/{dataset}/im_cell_areas.npy", im_areas)
 json.dump(config, open(f"data/experimental/configs/{dataset}.json", "w"))

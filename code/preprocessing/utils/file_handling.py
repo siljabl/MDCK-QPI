@@ -173,3 +173,43 @@ def import_PIV_velocity(path, config, _shape):
 
 
     return position, velocity
+
+
+
+
+
+def import_PIV_frame(path, im, frame):
+
+    # import PIV velocity field
+    data_PIV = import_txt_with_NaN(f"{path}/PIVlab_{frame+1:04d}.txt", header_rows=3)
+
+    # Extract values
+    x = np.ma.array(data_PIV[:, 0], dtype=int)
+    y = np.ma.array(data_PIV[:, 1], dtype=int)
+    u = np.ma.array(data_PIV[:, 2], dtype=np.float64)
+    v = np.ma.array(data_PIV[:, 3], dtype=np.float64)
+
+    # # transform PIV position to matrix entries
+    # dx   = y[1] - y[0]
+    # x0   = y[0] - dx
+    # xmax = int((np.ma.max(y) - x0) / dx) + 1
+
+    # x_tmp = np.ma.array((x - x0) / dx, dtype=int)
+    # y_tmp = np.ma.array((y - x0) / dx, dtype=int)
+
+    # position = np.ma.zeros((2, xmax, xmax), dtype=np.float64)
+    # velocity = np.ma.zeros((2, xmax, xmax), dtype=np.float64)
+
+    # h_mask   = np.ma.zeros((xmax, xmax), dtype=np.float64)
+
+    # # masking didn't work properly, so probably mean is affected by outside data points
+    # position[:, x_tmp, y_tmp] = [x, y]
+    # velocity[:, x_tmp, y_tmp] = [u, v]
+    
+    # h_mask[x_tmp, y_tmp] = im[x, y]
+
+    # velocity[0][h_mask <= 0] = 0
+    # velocity[1][h_mask <= 0] = 0
+
+
+    return [x,y], [u,v]

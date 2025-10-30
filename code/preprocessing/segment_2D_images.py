@@ -4,6 +4,7 @@ import pickle
 import argparse
 import numpy  as np
 import pandas as pd
+import trackpy as tp
 
 from tqdm     import tqdm
 from pathlib  import Path
@@ -77,8 +78,6 @@ elif microscope == 'tomocube':
 # empty arrays for storing data
 cells_df = pd.DataFrame()
 im_areas = []
-
-
 # segment cells in each frame
 for i in tqdm(range(Nframes)):
 
@@ -92,33 +91,92 @@ for i in tqdm(range(Nframes)):
 
    
     # smoothen image and remove large scale variation
-    if args.enforce_confluency:
-        n_blur = np.copy(n_im)
-        n_blur[n_blur < 1.33] = 1.37 #np.mean(im_blur)
-        n_blur = sc.ndimage.gaussian_filter(n_blur, 40)
+    # if args.enforce_confluency:
+    #     n_blur = np.copy(n_im)
+    #     n_blur[n_blur < 1.33] = 1.37 #np.mean(im_blur)
+    #     n_blur = sc.ndimage.gaussian_filter(n_blur, 40)
 
-        n_im[n_im < 1.33] = n_blur[n_im < 1.33]
+    #     n_im[n_im < 1.33] = n_blur[n_im < 1.33]
 
     n_norm = smoothen_normalize_im(n_im, config['segmentation']['s_high'], 
                                          config['segmentation']['s_low'])
 
     # estimate particle size from cell doubling time
     particle_size = config['segmentation']['particle_size'] * 2 ** (-i / (2*config['segmentation']['tau'] / frame_to_h))
-    pos = np.array(peak_local_max(n_norm, min_distance=int(np.round(particle_size))))
+    full_pos = np.array(peak_local_max(n_norm, min_distance=int(np.round(particle_size))))
 
     # remove non-confluent areas
-    pos = pos[(pos[:,1] > config['segmentation']['xmin']) * (pos[:,1] < config['segmentation']['xmax'])]
-    pos = pos[(pos[:,0] > config['segmentation']['ymin']) * (pos[:,0] < config['segmentation']['ymax'])]
+    pos = full_pos[(full_pos[:,1] > config['segmentation']['xmin']) * (full_pos[:,1] < config['segmentation']['xmax'])]
+    pos = full_pos[(full_pos[:,0] > config['segmentation']['ymin']) * (full_pos[:,0] < config['segmentation']['ymax'])]
 
     # segment cell areas using watershed
     if microscope == 'tomocube':
         n_norm = smoothen_normalize_im(n_im, 20, 30)
-    areas = get_cell_areas(-n_norm, pos, h_im, clear_edge=args.clear_edge)
 
-    # save frame
+    raw_areas = get_cell_areas(-n_norm, pos, h_im, clear_edge=False)#rgs.clear_edge)
+
+    # get cell properties
+    cell_props     = regionprops(raw_areas, n_im)
+    cell_areas     = np.array([cell.area for cell in cell_props])
+    cell_heights   = np.array([cell.mean_intensity for cell in cell_props])
+    cell_positions = np.array([cell.centroid for cell in cell_props], dtype=int)
+
+    # create mask to remove small cells
+    remove_small  = (cell_heights > config['filtering']['hmin'])
+    remove_small *= (cell_areas   > config['filtering']['Amin'] / pix_to_um[1]**2) 
+    remove_small *= (cell_areas * cell_heights > config['filtering']['Vmin']  / pix_to_um[1]**2)
+    #remove_small *= (cell_heights > 2.5) | (cell_areas > 600 / pix_to_um[1]**2)
+
+    # redo watershed without small cells
+    areas = get_cell_areas(-n_norm, pos[remove_small], h_im, clear_edge=args.clear_edge)
+
+    # save frame to temporary dataframe
+    im_areas.append(raw_areas)
+
+    tmp_df = pd.DataFrame({'x': pos.T[1][remove_small],
+                           'y': pos.T[0][remove_small],
+                           'frame': i * np.ones_like(pos.T[1][remove_small])})
+    
+    cells_df = pd.concat([cells_df, tmp_df], ignore_index=True)
+
+# save areas before filtering
+np.save(f"data/experimental/processed/{dataset}/im_cell_areas_raw.npy", im_areas)
+
+
+# remove short lived detections
+search_range = 20
+tracks = tp.link(cells_df, search_range=search_range, memory=5);
+tracks = tp.filter_stubs(tracks, threshold=config['filtering']['track_threshold']);
+
+
+
+# redo watershed with filtered positions
+im_areas = []
+for i in tqdm(range(Nframes)):
+
+    # import frame
+    if microscope == "holomonitor":
+        h_im = imageio.v2.imread(f"data/experimental/raw/{dataset}/MDCK-li_reg_zero_corr_fluct_{fmin+i}.tiff") / 100
+        n_im = np.copy(h_im)
+    else:
+        n_im = imageio.v2.imread(f"data/experimental/raw/{dataset}/MDCK-li_refractive_index_{fmin+i}.tiff") / 10_000
+        h_im = imageio.v2.imread(f"data/experimental/raw/{dataset}/MDCK-li_height_{fmin+i}.tiff") / pix_to_um[0]
+
+    # smoothen
+    n_norm = smoothen_normalize_im(n_im, config['segmentation']['s_high'], 
+                                         config['segmentation']['s_low'])
+
+    # get relevant frame from dataframe
+    tracks_tmp = tracks[tracks.frame == i]
+    x_cell = tracks_tmp.x.values
+    y_cell = tracks_tmp.y.values
+
+    pos = np.array([y_cell, x_cell]).T
+
+    areas = get_cell_areas(-n_norm, pos, h_im, clear_edge=args.clear_edge)
     im_areas.append(areas)
 
 
 # save output
-np.save(f"data/experimental/processed/{dataset}/im_cell_areas.npy", im_areas)
+np.save(f"data/experimental/processed/{dataset}/im_cell_areas_corrected.npy", im_areas)
 json.dump(config, open(f"data/experimental/configs/{dataset}.json", "w"))

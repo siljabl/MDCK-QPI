@@ -28,7 +28,7 @@ from file_handling import *
 
 
 
-def plot_cell_number(Ncells, dataset, frame_to_h = 1/12, savefig=True):
+def plot_cell_number(Ncells, dataset, frame_to_h = 1/12, savefig=True, prefix="filtered"):
     """ Plot global cell density """
 
     hour = np.arange(len(Ncells)) * frame_to_h
@@ -39,7 +39,7 @@ def plot_cell_number(Ncells, dataset, frame_to_h = 1/12, savefig=True):
     plt.plot(hour, Ncells, '.')
     plt.tight_layout()
     if savefig:
-        plt.savefig(f"results/{dataset}/raw_cell_number.png")
+        plt.savefig(f"results/{dataset}/{prefix}_cell_number.png")
 
 
 
@@ -74,6 +74,7 @@ def main():
     parser = argparse.ArgumentParser(description="Plot time evolutions")
     parser.add_argument('path',  type=str, help="Path to files to plot")
     parser.add_argument('param', type=str, help="Population parameter to plot.")
+    parser.add_argument('--raw',           action="store_true")
     args = parser.parse_args()
 
     # Assert correct input
@@ -93,24 +94,20 @@ def main():
 
     # Plot total number of cells
     if args.param == "number":
-        im_cell_areas = np.load(f"data/experimental/processed/{dataset}/im_cell_areas.npy")
+        if args.raw:
+            im_cell_areas = np.load(f"data/experimental/processed/{dataset}/raw_im_cell_areas.npy")
+            prefix = "raw"
+        else:
+            im_cell_areas = np.load(f"data/experimental/processed/{dataset}/im_cell_areas.npy")
+            prefix = "filtered"
 
         if microscope == "holomonitor":
-            # with open(f"data/experimental/processed/{dataset}/raw_cell_props.p", 'rb') as f:
-            #     cellprop = pickle.load(f)
-
             frame_to_h = 1/12
         else:
-            # with open(f"data/experimental/processed/{dataset}/raw_cell_props_0-20.p", 'rb') as f:
-            #     cellprop = pickle.load(f)
-
-            # with open(f"data/experimental/processed/{dataset}/raw_cell_props_21-40.p", 'rb') as f:
-            #     cellprop.append(pickle.load(f))
-
             frame_to_h = 1/4
 
         Ncells = [len(np.unique(im_area))-1 for im_area in im_cell_areas]
-        plot_cell_number(Ncells, dataset, frame_to_h)
+        plot_cell_number(Ncells, dataset, frame_to_h, prefix=prefix)
 
     # Plot mean intensity/height
     if args.param == "intensity" or args.param == "height":

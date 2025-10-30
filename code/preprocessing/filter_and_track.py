@@ -8,6 +8,7 @@ import trackpy as tp
 
 from pathlib import Path
 from datetime import datetime
+from skimage.measure import regionprops
 
 from utils.file_handling import *
 from utils.segment3D import get_voxel_size_35mm
@@ -24,8 +25,20 @@ args = parser.parse_args()
 
 # load sata
 dataset = Path(args.path).stem
-df     = pd.read_csv(f"data/experimental/processed/{dataset}/dataframe_unfiltered.csv")
 config = json.load(open(f"data/experimental/configs/{dataset}.json"))
+stack = import_stack(f"data/experimental/raw/{dataset}", config)
+im_areas = np.load(f"data/experimental/processed/{dataset}/im_cell_areas.npy")
+cellprops = [regionprops(im_areas[i], stack[i]) for i in range(len(im_areas))]
+
+Ncells = [len(cells) for cells in cellprops]
+Acells = [[cell.area for cell in cells] for cells in cellprops]
+hcells = [[cell.mean_intensity for cell in cells] for cells in cellprops]
+Fcells = [[frame for cell in cellprops[frame]] for frame in range(len(cellprops))]
+
+Acells = np.concatenate(Acells)
+hcells = np.concatenate(hcells)
+Fcells = np.concatenate(Fcells)
+Vcells = hcells * Acells
 
 
 # set microscope specific parameters
@@ -50,11 +63,19 @@ h_min = config['filtering']['hmin']
 h_max = config['filtering']['hmax']
 
 # create mask
-h_mask = (df.h_avrg > h_min) * (df.h_max < h_max) 
-A_mask = (df.A > A_min)      * (df.A < A_max)
-V_mask = (df.V > V_min)      * (df.V < V_max)
+h_mask = (hcells > h_min) * (hcells < h_max) 
+A_mask = (Acells > A_min) * (Acells < A_max)
+V_mask = (Vcells > V_min) * (Vcells < V_max)
 
 mask = h_mask * A_mask * V_mask
+
+pos_cells = np.concatenate([[cell.centroid_weighted for cell in cells] for cells in cellprops])
+df = pd.DataFrame({'x': pos_cells.T[1],# * pix_to_um[0],
+                         'y': pos_cells.T[0],# * pix_to_um[0],
+                         'area': Acells * xy_to_um**2,
+                         'hmean': hcells,
+                         #'label': Lcells, 
+                         'frame': Fcells})
 
 print(f"Before filtering: {len(df)} cells")
 print(f"After filtering:  {len(df[mask])} cells")
@@ -64,7 +85,7 @@ tracks = tp.link(df[mask], search_range=search_range, memory=5);
 tracks = tp.filter_stubs(tracks, threshold=5);
 
 # save as pickle
-data_obj = SegmentationData()
+data_obj = SegmentationData(f"data/experimental/processed/{dataset}/cell_props.p")
 data_obj.transform_df_to_ma(tracks, xy_to_um)
 data_obj.save(f"data/experimental/processed/{dataset}/cell_props.p")
 

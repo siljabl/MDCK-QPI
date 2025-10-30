@@ -42,11 +42,12 @@ def compute_cell_correlation(dataset, args):
     heights    =  cellprop.h
     areas      =  cellprop.A
     volumes    =  cellprop.h * cellprop.A
+    vpositions = [(cellprop.x[:-1] + cellprop.x[1:]) / 2, (cellprop.y[:-1] + cellprop.y[1:]) / 2]
     velocities = [cellprop.dx, cellprop.dy]
 
 
     # Define mean variable axis
-    if args.mean_var == 't':
+    if args.mean_var == 'r':
         mean_var = 1
     elif args.mean_var == 'cell': 
         mean_var = 0
@@ -55,11 +56,14 @@ def compute_cell_correlation(dataset, args):
     h_variation = np.ma.array(heights - np.mean(heights, axis=mean_var, keepdims=True), mask=False)
     A_variation = np.ma.array(areas   - np.mean(areas,   axis=mean_var, keepdims=True), mask=False)
     V_variation = np.ma.array(volumes - np.mean(volumes, axis=mean_var, keepdims=True), mask=False)
-    v_variation = [np.ma.array(velocities[0] - np.mean(velocities[0], axis=mean_var, keepdims=True), mask=False),
-                   np.ma.array(velocities[1] - np.mean(velocities[1], axis=mean_var, keepdims=True), mask=False)]
+    v_variation = np.ma.array([velocities[0] - np.mean(velocities[0], axis=mean_var, keepdims=True),
+                               velocities[1] - np.mean(velocities[1], axis=mean_var, keepdims=True)])
+
+    print(np.shape(positions), np.shape(velocities))
 
     # Initialize correlation object
     autocorr_obj = AutocorrelationData(f"data/experimental/processed/{dataset}/cell_autocorr.p")
+    autocorr_obj.add_density(cellprop.A)
 
     if args.var == 'r' or args.var == 'all':
         # Upper limit on distance
@@ -73,7 +77,8 @@ def compute_cell_correlation(dataset, args):
         if args.param == 'VV' or args.param == 'all':
             autocorr_obj.compute_spatial(positions, V_variation, 'VV', args.dr, rmax, t_avrg=args.t_avrg, overwrite=args.overwrite)
         if args.param == 'vv' or args.param == 'all':
-            autocorr_obj.compute_spatial(positions, v_variation, 'vv', args.dr, rmax, t_avrg=args.t_avrg, overwrite=args.overwrite) 
+            autocorr_obj.compute_spatial(vpositions, v_variation, 'vv', args.dr, rmax, t_avrg=args.t_avrg, overwrite=args.overwrite) 
+
 
     if args.var == 't' or args.var == 'all':
         # Upper limit on t ime difference
@@ -87,6 +92,7 @@ def compute_cell_correlation(dataset, args):
         if args.param == 'VV' or args.param == 'all':
             autocorr_obj.compute_temporal(V_variation, 'VV', tmax, mean_var=args.mean_var, t_avrg=args.t_avrg, overwrite=args.overwrite)
         if args.param == 'vv' or args.param == 'all':
+            print(args.mean_var)
             autocorr_obj.compute_temporal(v_variation, 'vv', tmax, mean_var=args.mean_var, t_avrg=args.t_avrg, overwrite=args.overwrite)
 
     # Save autocorrelation as .autocorr
@@ -248,8 +254,8 @@ def main():
     parser.add_argument('--dr',          type=float, help="Spatial step size (float)",                                          default=20)
     parser.add_argument('--rfrac',       type=float, help="Max distance to compute correlation for (float)",                    default=0.5)
     parser.add_argument('--tfrac',       type=float, help="Fraction of total duration to compute correlation for (float)",      default=0.5)
-    parser.add_argument('--mean_var',    type=str,   help="Variable to take mean over in <x - <x>_var> (t or cell). Default: t",  default='t')
-    parser.add_argument('--t_avrg',                  help="Variable to take mean over in <x - <x>_var> (t or cell). Default: t", action="store_true")
+    parser.add_argument('--mean_var',    type=str,   help="Variable to take mean over in <x - <x>_var> (r or cell). Default: r",  default='r')
+    parser.add_argument('--t_avrg',                  help="Take average over all starting times (if steady state)", action="store_true")
     parser.add_argument("--field",                   help="Compute correlations on height and velocity fields.",                action="store_true")
     parser.add_argument("--cells",                   help="Compute correlations on segmented cell properties.",                 action="store_true")
     args = parser.parse_args()

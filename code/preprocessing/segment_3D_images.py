@@ -106,12 +106,12 @@ with open(logfile, "a") as log:
             dri_ydz_list.append(dri_ydz)
         
         # compute zero level. same for entire experiment
-        z_0 = estimate_cell_bottom(dri_xdz_list, dri_xdz_list)
+        z_0 = estimate_cell_bottom(dri_xdz_list, dri_ydz_list)
         z_0 = median(z_0, disk(3))
         plt.imshow(z_0)
         plt.colorbar()
         #fig = plot_z_profile([ri_xz_list, dri_xdz_list], stack, z_0)
-        fig.savefig(f"{mhds_dir}{os.sep}{Path(exp).name}_zero_level.png", dpi=300)
+        plt.savefig(f"{mhds_dir}{os.sep}{Path(exp).name}_zero_level.png", dpi=300)
         print(f"zero-level: {z_0}\n")
 
 
@@ -136,7 +136,7 @@ with open(logfile, "a") as log:
             # apply threshold
             threshold = determine_threshold(thresholds, sum_above)
             cell_pred = (cell_prob > threshold)
-            log.write(f'{file.name}, {z_0}, {threshold}, {args.r1_min}, {args.r1_max}, {args.r2}\n')
+            log.write(f'{file.name}, {np.mean(z_0)}, {threshold}, {args.r1_min}, {args.r1_max}, {args.r2}\n')
 
             # filter mask
             tmp_mask = median(cell_pred[np.min(z_0):], kernel_1)
@@ -155,7 +155,7 @@ with open(logfile, "a") as log:
 
 
         # plot illustration of MlM threshold and final mask
-        fig = plot_threshold(thresholds, [sum_above, sum_below], cell_prob.shape, z_0)
+        fig = plot_threshold(thresholds, [sum_above, sum_below], cell_prob.shape, np.mean(z_0))
         fig.savefig(f"{mhds_dir}{os.sep}{file.name.split('_prob.npy')[0]}_threshold.png", dpi=300)
 
         # save as pickle

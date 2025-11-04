@@ -6,10 +6,10 @@ import pandas as pd
 from pathlib import Path
 from datetime import datetime
 
-sys.path.append("code/preprocessing/utils")
-sys.path.append("code/analysis/")
-import utils.masked_correlation_functions as compute
-from utils.variation_functions import global_density
+sys.path.append("code/preprocessing/")
+sys.path.append("code/analysis/utils")
+import masked_correlation_functions as compute
+from variation_functions import global_density
 
 
 class SegmentationData:
@@ -24,14 +24,14 @@ class SegmentationData:
 
     def transform_df_to_ma(self, df, xy_to_um):
 
-        x = df.pivot(index='frame', columns='particle', values='x').to_numpy()# * xy_to_um
-        y = df.pivot(index='frame', columns='particle', values='y').to_numpy()# * xy_to_um
-        A = df.pivot(index='frame', columns='particle', values='A').to_numpy()# * xy_to_um**2
-        h = df.pivot(index='frame', columns='particle', values='h_avrg').to_numpy()
+        x = df.pivot(index='frame', columns='particle', values='x').to_numpy()    * xy_to_um
+        y = df.pivot(index='frame', columns='particle', values='y').to_numpy()    * xy_to_um
+        A = df.pivot(index='frame', columns='particle', values='area').to_numpy() * xy_to_um**2
+        h = df.pivot(index='frame', columns='particle', values='hmean').to_numpy()
 
-        label  = df.pivot(index='frame', columns='particle', values='label').to_numpy()
-        aminor = df.pivot(index='frame', columns='particle', values='a_min').to_numpy()# * xy_to_um
-        amajor = df.pivot(index='frame', columns='particle', values='a_max').to_numpy()# * xy_to_um
+        # label  = df.pivot(index='frame', columns='particle', values='label').to_numpy()
+        # aminor = df.pivot(index='frame', columns='particle', values='a_min').to_numpy()# * xy_to_um
+        # amajor = df.pivot(index='frame', columns='particle', values='a_max').to_numpy()# * xy_to_um
 
         self.x = np.ma.masked_where(np.isnan(x), x)
         self.y = np.ma.masked_where(np.isnan(y), y)
@@ -41,9 +41,10 @@ class SegmentationData:
         self.dx = np.ma.diff(self.x, axis=0)
         self.dy = np.ma.diff(self.y, axis=0)
 
-        self.label = np.ma.masked_where(np.isnan(label), label)
-        self.aminor = np.ma.masked_where(np.isnan(aminor), aminor)
-        self.amajor = np.ma.masked_where(np.isnan(amajor), amajor)
+
+        # self.label = np.ma.masked_where(np.isnan(label), label)
+        # self.aminor = np.ma.masked_where(np.isnan(aminor), aminor)
+        # self.amajor = np.ma.masked_where(np.isnan(amajor), amajor)
 
         self.density = global_density(self.A)
 
@@ -363,6 +364,7 @@ class AutocorrelationData:
 
         # Compute autocorrelation
         fmax = variable.shape[-2]
+        print(fmax, variable.shape)
 
         Cr = compute.general_spatial_correlation(positions[0][:fmax], positions[1][:fmax], variable,
                                                  dr=dr, r_max=r_max, t_avrg=t_avrg)
@@ -412,7 +414,7 @@ class AutocorrelationData:
 
 
     
-    def bin_data(self, variable, parameter, bin_size=200):
+    def bin_data(self, variable, parameter, bin_size=200, update_obj=False):
         
         # Assertions to ensure correct data exists
         assert variable == "r" or variable == "t", "Variable must be either 'r' or 't'."
@@ -479,6 +481,20 @@ class AutocorrelationData:
                 "std": np.ma.array(std_correlation, mask=mean_correlation==0),
                 "N_in_bin": counts
             }
+
+            if update_obj:
+                # Spatial correlation
+                if variable == "r":
+                    self.spatial[parameter] = output['mean']
+
+                # Temporal correlation
+                elif variable == "t":
+                    self.temporal[parameter] = output['mean']
+
+                elif variable == "t_cell":
+                    self.temporal[parameter] = output['mean']
+
+
 
             return output
         

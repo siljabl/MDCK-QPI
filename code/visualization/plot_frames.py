@@ -2,7 +2,7 @@
 Script to plot frames that illustrates data analysis
 func:
 - cell_detection
-
+- field_velocity or PIV
 """
 
 import os
@@ -14,13 +14,10 @@ import argparse
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import skimage.morphology as morph
 from skimage.measure import regionprops
-
-# module_path = os.path.abspath(os.path.join(''))
-# if module_path not in sys.path:
-#     sys.path.append(module_path)
 
 from tqdm import tqdm
 from pathlib import Path
@@ -66,19 +63,101 @@ def plot_cell_detection(ax, frame, pos, vmin=0, vmax=20, label='h (µm)'):
 
 
 
-def plot_cell_height():
+def plot_cell_height(ax, frame, cellprop, hmin=0, hmax=11):
+    """ 
+    Plotting imshow of segmented cell areas with faces colors by average height
+
+    Parameters:
+    ax:       ax object to plot data on
+    frame:    frame of raw data to plot as heatmap
+    cellprop: list of regionprop of all cells in frame
+    hmin:     min height in heatmap
+    hmax:     max height in heatmap
+    """
+    
+    h_cmap = sns.color_palette("Blues",   as_cmap=True)
+    e_cmap = mpl.colors.ListedColormap(['none', 'w'])
+
+    h_mean = np.zeros_like(frame, dtype=np.float64)
+    e_im   = np.zeros_like(frame, dtype=int)
+
+    for cell in cellprop:
+
+        # isolate cell
+        cell_mask = (frame == cell.label)
+
+        # cell heights
+        h_mean[cell_mask] = cell.mean_intensity
+
+        # cell edges
+        cell_interior = morph.erosion(cell_mask, footprint=morph.disk(1))
+        edge = cell_mask ^ cell_interior
+        e_im += edge
+
+    e_im += (h_mean == 0)
+
+    sns.heatmap(h_mean, ax=ax, square=True, cmap=h_cmap, vmin=hmin, vmax=hmax, xticklabels=False, yticklabels=False, cbar=True)
+    sns.heatmap(e_im, ax=ax, cmap=e_cmap,  xticklabels=False, yticklabels=False, cbar=False)
+    ax.set(title=f"Average cell height (µm)")
+
     return 0
 
 
-def plot_cell_volume():
+def plot_cell_volume(ax, frame, cellprop, Vmin=600, Vmax=8000, xy_to_um=0.15):
+    """ 
+    Plotting imshow of segmented cell areas with faces colors by the cell volume
+
+    Parameters:
+    ax:       ax object to plot data on
+    frame:    frame of raw data to plot as heatmap
+    cellprop: list of regionprop of all cells in frame
+    Vmin:     min volume in heatmap
+    Vmax:     max volume in heatmap
+    """
+        
+    V_cmap = sns.color_palette("Oranges",   as_cmap=True)
+    e_cmap = mpl.colors.ListedColormap(['none', 'w'])
+
+    V_mean = np.zeros_like(frame, dtype=np.float64)
+    e_im   = np.zeros_like(frame, dtype=int)
+
+    for cell in cellprop:
+
+        # isolate cell
+        cell_mask = (frame == cell.label)
+
+        # cell heights
+        V_mean[cell_mask] = cell.mean_intensity * cell.area * xy_to_um**2
+
+        # cell edges
+        cell_interior = morph.erosion(cell_mask, footprint=morph.disk(1))
+        edge = cell_mask ^ cell_interior
+        e_im += edge
+
+    e_im += (V_mean == 0)
+
+    sns.heatmap(V_mean, ax=ax, square=True, cmap=V_cmap, vmin=Vmin, vmax=Vmax, xticklabels=False, yticklabels=False, cbar=True)
+    sns.heatmap(e_im, ax=ax, cmap=e_cmap,  xticklabels=False, yticklabels=False, cbar=False)
+    ax.set(title=f"Cell volume (µm³)")
     return 0
 
 
-def plot_cell_velocity():
+def plot_cell_velocity(ax, frame, velocity, pos, vmin=0, vmax=20, label='h (µm)'):
+
+    sns.heatmap(frame, ax=ax, square=True, cmap="gray", vmin=vmin, vmax=vmax, 
+                xticklabels=False, yticklabels=False, cbar=True, cbar_kws={'label':label})
+    ax.quiver(pos[0], pos[1], velocity[0], -velocity[1], color="cyan", alpha=0.8, scale_units="xy", scale=0.15)
+
     return 0
 
 
-def plot_field_velocity():
+def plot_field_velocity(ax, frame, v_field, pos, vmin=0, vmax=20, label='h (µm)'):
+
+    #sns.heatmap(frame, ax=ax, square=True, cmap="gray", vmin=vmin, vmax=vmax, 
+    #            xticklabels=False, yticklabels=False, cbar=True, cbar_kws={'label':label})
+    ax.imshow(frame)
+    ax.quiver(pos[0], pos[1], v_field[0], v_field[1], color="cyan", alpha=0.4)
+    
     return 0
 
 
@@ -89,11 +168,21 @@ def plot_field_velocity():
 
 def main():
     parser = argparse.ArgumentParser(description="Usage: python cell_segmentation_Holomonitor.py dir file")
-    parser.add_argument("path",     type=str,  help="Path to data folder")
-    parser.add_argument("func",     type=str,  help="Plotting function")
-    parser.add_argument("-edges",   type=bool, help="Plot edges", default=False)
-    parser.add_argument("--raw", action="store_true", help="plotting raw result in stead of final")
+    parser.add_argument("path",          type=str,   help="Path to data folder")
+    parser.add_argument("func",          type=str,   help="Plotting function")
+    parser.add_argument("--track_tresh", type=int,   help="first frame of tracked data (corresponds to threshold-1)", default=0)
+    parser.add_argument("--fmin",        type=int,   help="First frame to plot", default=0)
+    parser.add_argument("--Nframes",     type=int,   help="Number of frames to plot", default=9999)
+    parser.add_argument("--figscale",    type=float, help="Scaleing of figure size. Default size is (10,8).", default=1)
+    parser.add_argument("--edges",       type=bool,  help="Plot edges", default=False)
+    parser.add_argument("--raw",       action="store_true", help="plotting raw data")
+    parser.add_argument("--corrected", action="store_true", help="plotting corrected data")
+    parser.add_argument("--tracked",   action="store_true", help="plotting tracked data")
+    parser.add_argument("--final",     action="store_true", help="plotting final data")
+    parser.add_argument("-o", "--outdir", type=str, help="Output directory")
     args = parser.parse_args()
+
+    assert args.track_tresh > 0 or args.raw or args.corrected, "must provide fmin"
 
 
     # Decompose input
@@ -113,16 +202,28 @@ def main():
     fmax     = config['segmentation']['fmax']
     Nframes  = fmax - fmin + 1
 
+    if args.Nframes < Nframes:
+        Nframes = args.Nframes
+
     if args.raw:
-        im_cell_areas = np.load(f"data/experimental/processed/{dataset}/im_cell_areas.npy")
+        im_cell_areas = np.load(f"data/experimental/processed/{dataset}/im_cell_areas_raw.npy")
+
+    elif args.corrected:
+        im_cell_areas = np.load(f"data/experimental/processed/{dataset}/im_cell_areas_corrected.npy")
+
+    elif args.tracked:
+        im_cell_areas = np.load(f"data/experimental/processed/{dataset}/im_cell_areas_tracked.npy")
 
     else:
         cellprop = SegmentationData(f"data/experimental/processed/{dataset}/cell_props.p")
 
 
     # Define path for output
-    outdir = f"figs/frames/{args.func}/{dataset}/"
-    Path(outdir).mkdir(parents=True, exist_ok=True) 
+    if args.outdir == "":
+        outdir = f"figs/frames/{args.func}/{dataset}/"
+        Path(outdir).mkdir(parents=True, exist_ok=True)
+    else:
+        outdir = args.outdir
 
 
     # set value range
@@ -135,26 +236,25 @@ def main():
 
 
     # loop through frames
-    for frame in tqdm(range(Nframes)):
-
+    for frame in tqdm(range(args.fmin, Nframes+args.fmin)):
 
         # Import raw image
-        if args.func == "cell_detection":# or args.func == "cell_velocity" or arg.
+        if microscope == "holomonitor":
+            im = imageio.v2.imread(f"data/experimental/raw/{dataset}/MDCK-li_reg_zero_corr_fluct_{fmin+frame+args.track_tresh}.tiff") / 100
+        else:
+            im = imageio.v2.imread(f"data/experimental/raw/{dataset}/MDCK-li_refractive_index_{fmin+frame}.tiff") / 10_000
 
-            if microscope == "holomonitor":
-                im = imageio.v2.imread(f"data/experimental/raw/{dataset}/MDCK-li_reg_zero_corr_fluct_{fmin+frame}.tiff") / 100
-            else:
-                im = imageio.v2.imread(f"data/experimental/raw/{dataset}/MDCK-li_refractive_index_{fmin+frame}.tiff") / 10_000
-
-
+        # Compute reigion props
+        if args.raw or args.corrected or args.tracked:
+            cellprop = regionprops(im_cell_areas[frame], im)
         
+
         # plot
-        fig, ax = plt.subplots(1,1, figsize=(10,8))
+        fig, ax = plt.subplots(1,1, figsize=(10*args.figscale, 8*args.figscale))
 
         if args.func == "cell_detection":
 
-            if args.raw:
-                cellprop  = regionprops(im_cell_areas[frame], im[:, :3200])
+            if args.raw or args.corrected:
                 positions = np.array([cell.centroid_weighted for cell in cellprop])
             else:
                 positions = [cellprop.x[frame] / pix_to_um[1], cellprop.y[frame] / pix_to_um[1]]
@@ -163,19 +263,27 @@ def main():
 
 
         elif args.func == "cell_height":
-            plot_cell_height()
+
+            plot_cell_height(ax, im_cell_areas[frame], cellprop)
 
 
         elif args.func == "cell_volume":
-            plot_cell_volume()
+
+            plot_cell_volume(ax, im_cell_areas[frame], cellprop, xy_to_um=pix_to_um[1])
 
 
         elif args.func == "cell_velocity":
-            plot_cell_velocity()
+            positions  = [cellprop.x[frame]  / pix_to_um[1], cellprop.y[frame]  / pix_to_um[1]]
+            velocities = [cellprop.dx[frame] / pix_to_um[1], cellprop.dy[frame] / pix_to_um[1]]
+
+            plot_cell_velocity(ax, im, velocities, positions)
 
 
-        elif args.func == "field_velocity":
-            plot_field_velocity()
+        elif args.func == "field_velocity" or "PIV":
+            # Load data
+            positions, v_field = import_PIV_frame(f"data/experimental/PIV/{dataset}/", im, frame)
+
+            plot_field_velocity(ax, im, v_field, positions)
 
         else:
             print("Error: func not recognized.")
@@ -189,11 +297,15 @@ def main():
 
         # save
         if args.raw:
-            prefix = "raw_"
+            sufix = "_raw"
+        elif args.corrected:
+            sufix = "_corrected"
+        elif args.tracked:
+            sufix = "_tracked"
         else:
-            prefix = ""
+            sufix = ""
         fig.tight_layout()
-        plt.savefig(f"{outdir}/{prefix}frame_{frame}.png", dpi=300);
+        plt.savefig(f"{outdir}/frame_{frame+args.track_tresh}{sufix}.png", dpi=300);
         plt.close()
 
 

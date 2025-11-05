@@ -90,12 +90,11 @@ with open(logfile, "a") as log:
 
             stack_name = f"{path.parent}{os.sep}{file.name.split('_prob.npy')[0]}.tiff"
             frame = stack_name.split('_')[-1].split('.tiff')[0]
-            print(frame)
 
-        #     # load stacks
-        #     stack = commonStackReader(stack_name)
-        #     mean_tiles[:, :, frame] = split_tiles(stack, mean_tiles, frame)
-        #     #MlM_probabilities = commonMultiChannelStackReader(file)
+            # load stacks
+            stack = commonStackReader(stack_name)
+            mean_tiles[:, :, frame] = split_tiles(stack, mean_tiles, frame)
+            #MlM_probabilities = commonMultiChannelStackReader(file)
         #     MlM_probabilities = np.load(file)
         #     cell_prob = MlM_probabilities[:,:,:,1]
 

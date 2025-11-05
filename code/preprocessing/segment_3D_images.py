@@ -111,8 +111,8 @@ with open(logfile, "a") as log:
 
             for ix in range(4):
                 for iy in range(4):
-                    z_diff = z0_median - z0_tiles[ix,iy]
-                    z_pad = int(z_diff)
+                    z_diff = int(z0_median - z0_tiles[ix,iy])
+                    z_pad = abs(z_diff)
 
                     if z_pad > 0:
                         print(z_pad)

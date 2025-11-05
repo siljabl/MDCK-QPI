@@ -92,7 +92,7 @@ with open(logfile, "a") as log:
         for file in path.glob(f"{exp}*_prob.npy"):
 
             stack_name = f"{path.parent}{os.sep}{file.name.split('_prob.npy')[0]}.tiff"
-            frame = stack_name.split('_')[-1].split('.tiff')[0]
+            frame = int(stack_name.split('_')[-1].split('.tiff')[0])
             print(f"Frame {frame}")
 
             # load stacks

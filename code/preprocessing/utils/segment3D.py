@@ -3,6 +3,7 @@ Functions for transforming Tomocube data to 'Holomonitor data', i.e. 2D tiffs of
 '''
 
 import numpy as np
+import scipy as sc
 from skimage.morphology import disk
 
 
@@ -51,8 +52,35 @@ def estimate_cell_bottom(stack, mode="mean"):
     else:
         print("Error: doesn't recognize mode.")
 
-
     return z0
+
+
+def plane(params, x, y):
+    a, b, c = params
+    return a*x + b*y + c
+
+def residual_plane(params, X, Y, Z):
+    return Z - plane(params, X, Y)
+
+
+def fit_plane(Z0):
+    '''
+    Fit linear plane to z0 data points
+    '''
+
+    dims = np.shape(Z0)
+    Y, X = np.meshgrid(np.arange(dims[0]), np.arange(dims[1]))
+
+    X = X.flatten()
+    Y = Y.flatten()
+    Z = Z0.flatten()
+
+    flat_params = np.array([0,0, np.mean(Z0)])
+    result = sc.optimize.least_square(residual_plane, flat_params, args=(X, Y, Z))
+
+    z_plane = plane(result.x, X, Y)
+
+    return z_plane
 
 
 

@@ -40,6 +40,7 @@ parser.add_argument('dir',            type=str,   help="Path to file to plot. Ty
 parser.add_argument('--bin_size',     type=int, help="data set as listed in holo_dict", default=200)
 parser.add_argument('-b', '--binned',  action="store_true", help="bin data by density")
 parser.add_argument('-r', '--rescale', action="store_true", help="rescale data")
+parser.add_argument('--ylog',          action="store_true", help="rescale data")
 args = parser.parse_args()
 
 
@@ -141,6 +142,10 @@ else:
     ax[0].set(xlabel=r"$h ~[µm]$",   ylabel="PDF")
     ax[1].set(xlabel=r"$A ~[µm^2]$")
     ax[2].set(xlabel=r"$V ~[µm^3]$")
+
+if args.ylog:
+    for i in range(3):
+        ax[i].set(yscale="log")
 
 fig.tight_layout()
 fig.subplots_adjust(right=0.85)

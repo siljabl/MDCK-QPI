@@ -107,6 +107,7 @@ with open(logfile, "a") as log:
                 for iy in range(4):
                     z0_tiles[ix,iy] = estimate_cell_bottom(mean_tiles[ix,iy])
             
+            # collect tiles in one average tile
             z0_median = np.median(z0_tiles)
 
             for ix in range(4):
@@ -118,15 +119,16 @@ with open(logfile, "a") as log:
                         print(ix, iy, z_pad)
                         npad = ((z_pad, z_pad), (0, 0), (0, 0))
                         tile_zcorr = np.roll(np.pad(mean_tiles[ix,iy], pad_width=npad, mode="edge"), shift=z_diff, axis=0)[z_pad:-z_pad]
-                        z0 = estimate_cell_bottom(tile_zcorr)
-                        print(z0)
+                        z01 = estimate_cell_bottom(mean_tiles[ix,iy])
+                        z02 = estimate_cell_bottom(tile_zcorr)
+                        print(z01, z02)
 
                         mean_tile += tile_zcorr / 16
 
                     elif z_pad == 0:
                         mean_tile += mean_tiles[ix,iy] / 16
-            
-
+        
+        # detect tilt of dish
 
 
         # # compute zero level. same for entire experiment

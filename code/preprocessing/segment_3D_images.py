@@ -90,6 +90,7 @@ with open(logfile, "a") as log:
 
             stack_name = f"{path.parent}{os.sep}{file.name.split('_prob.npy')[0]}.tiff"
             frame = stack_name.split('_')[-1].split('.tiff')[0]
+            print(f"Frame {frame}")
 
             # load stacks
             stack = commonStackReader(stack_name)
@@ -100,12 +101,12 @@ with open(logfile, "a") as log:
             tiles = split_tiles(stack, mean_tiles)
             mean_tiles += tiles
 
-        # compute base zero-level  
-        for ix in range(Nx):
-            for iy in range(Nx):
-                z0_tiles[ix,iy] = estimate_cell_bottom(mean_tiles[ix,iy])
+            # compute base zero-level  
+            for ix in range(Nx):
+                for iy in range(Nx):
+                    z0_tiles[ix,iy] = estimate_cell_bottom(mean_tiles[ix,iy])
 
-        print(z0_tiles)
+            print(z0_tiles)
 
             # add to list for experiment
             #ri_z_list.append(ri_z)

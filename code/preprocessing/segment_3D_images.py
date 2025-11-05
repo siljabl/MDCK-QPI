@@ -79,7 +79,7 @@ with open(logfile, "a") as log:
         dri_ydz_list = []
 
         # array for taking mean at specific tile over all frames
-        mean_tiles = np.zeros([4, 4, 41, 912, 912])
+        mean_tiles = np.zeros([4, 4, 41, 78, 912, 912])
 
         sum_above = np.zeros_like(thresholds)
         sum_below = np.zeros_like(thresholds)

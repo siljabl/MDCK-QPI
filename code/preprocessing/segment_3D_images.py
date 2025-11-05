@@ -79,7 +79,8 @@ with open(logfile, "a") as log:
         dri_ydz_list = []
 
         # array for taking mean at specific tile over all frames
-        mean_tiles = np.zeros([4, 4, 41, 78, 912, 912])
+        tiles      = np.zeros([4, 4, 78, 912, 912])
+        mean_tiles = np.zeros([4, 4, 78, 912, 912])
 
         sum_above = np.zeros_like(thresholds)
         sum_below = np.zeros_like(thresholds)
@@ -93,7 +94,8 @@ with open(logfile, "a") as log:
 
             # load stacks
             stack = commonStackReader(stack_name)
-            mean_tiles[:, :, frame] = split_tiles(stack, mean_tiles, frame)
+            tiles = split_tiles(stack, mean_tiles)
+            mean_tiles += tiles
             #MlM_probabilities = commonMultiChannelStackReader(file)
         #     MlM_probabilities = np.load(file)
         #     cell_prob = MlM_probabilities[:,:,:,1]

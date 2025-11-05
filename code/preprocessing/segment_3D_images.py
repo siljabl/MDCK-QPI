@@ -101,12 +101,12 @@ with open(logfile, "a") as log:
             tiles = split_tiles(stack, mean_tiles)
             mean_tiles += tiles
 
-            # compute base zero-level  
-            for ix in range(4):
-                for iy in range(4):
-                    z0_tiles[ix,iy] = estimate_cell_bottom(mean_tiles[ix,iy])
+        # compute base zero-level  
+        for ix in range(4):
+            for iy in range(4):
+                z0_tiles[ix,iy] = estimate_cell_bottom(mean_tiles[ix,iy])
 
-            print(z0_tiles)
+        print(z0_tiles)
 
             # add to list for experiment
             #ri_z_list.append(ri_z)

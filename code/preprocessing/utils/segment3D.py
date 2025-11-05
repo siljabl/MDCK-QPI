@@ -43,7 +43,6 @@ def estimate_cell_bottom(stack):
     n_z   = np.mean(stack, axis=(1,2))
     dn_dz = np.diff(n_z) + 1
     z0    = np.argmax(dn_dz)
-    print(z0)
 
     return z0
 

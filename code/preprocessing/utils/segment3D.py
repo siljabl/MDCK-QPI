@@ -57,11 +57,16 @@ def estimate_cell_bottom(stack, mode="mean"):
     return z0
 
 
-def correct_zslice_tile(tile, z0_median):
+def correct_zslice_tile(tile, z0_tile, z0_median):
     '''
     Corrects zslice of tile so it has same median as z0_median
+
+    tile:      stack of tile
+    z0_tile:   median zero-level for tile
+    z0_median: median zero-level for full stack
     '''
-    z_diff = int(z0_median - tile)
+    
+    z_diff = int(z0_median - z0_tile)
     z_pad = abs(z_diff)
 
     if z_pad > 0:

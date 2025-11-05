@@ -82,7 +82,7 @@ with open(logfile, "a") as log:
         mean_tiles = np.zeros([Nframes, Nz, Nx, Nx])
         mean_tile  = np.zeros([Nz, Nx, Nx])
         z0_tiles   = np.zeros([4, 4])
-        z0_median  = np.zeros(Nframes) 
+        z0_arr     = np.zeros(Nframes) 
 
         sum_above = np.zeros_like(thresholds)
         sum_below = np.zeros_like(thresholds)
@@ -108,21 +108,21 @@ with open(logfile, "a") as log:
                 for iy in range(4):
                     z0_tiles[ix,iy] = estimate_cell_bottom(tiles[ix,iy])
 
-            z0_median[frame] = np.median(np.round(z0_tiles))
-            print("Median z0: ", z0_median[frame])
+            z0_arr[frame] = int(np.round(np.median(z0_tiles)))
+            print("Median z0: ", z0_arr[frame])
 
             # adjust zslice between tiles
             for ix in range(4):
                 for iy in range(4):
-                    tile_zcorr = correct_zslice_tile(tiles[ix,iy], z0_median[frame])
+                    tile_zcorr = correct_zslice_tile(tiles[ix,iy], z0_tiles[ix, iy], z0_arr[frame])
                     mean_tiles[frame] += tile_zcorr / 16
 
 
         # adjust zslice between frames
-        z0_median = np.round(np.median(z0_median))
+        z0 = np.round(np.median(z0_arr))
 
         for f in range(Nframes):
-            tile_zcorr = correct_zslice_tile(mean_tiles[f], z0_median)
+            tile_zcorr = correct_zslice_tile(mean_tiles[f], z0_arr[frame], z0)
             mean_tile += tile_zcorr / Nframes
 
         # detect tilt of dish

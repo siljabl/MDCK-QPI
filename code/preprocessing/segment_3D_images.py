@@ -104,7 +104,7 @@ with open(logfile, "a") as log:
             dri_dz = np.diff(ri_z,  axis=2) + 1
             z_0 = estimate_cell_bottom(dri_dz)
 
-            print(frame, z_0)
+            print(frame, np.mean(tiles, axis=(2,3,4)))
 
             # add to list for experiment
             #ri_z_list.append(ri_z)

@@ -113,6 +113,7 @@ with open(logfile, "a") as log:
                 for iy in range(4):
                     z_diff = z0_median - z0_tiles[ix,iy]
                     z_pad = int(z_diff)
+                    print(z_pad)
                     npad = ((z_pad, z_pad), (0, 0), (0, 0))
                     tile_zcorr = np.roll(np.pad(mean_tiles[ix,iy], pad_width=npad), shift=z_diff, axis=0)[z_pad:-z_pad]
                     z0 = estimate_cell_bottom(tile_zcorr)

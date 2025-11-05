@@ -28,7 +28,8 @@ parser.add_argument('--r1_max',  type=int, help="max radius of kernel 1", defaul
 parser.add_argument('--r2',      type=int, help="radius of kernel 2", default='25')
 args = parser.parse_args()
 
-
+Nx = 912
+Nframes = 41
 
 # create folders
 in_dir = f"{args.dir}predictions"
@@ -77,8 +78,8 @@ with open(logfile, "a") as log:
         dri_dz_list = []
         
         # array for taking mean at specific tile over all frames
-        tiles      = np.zeros([4, 4, 78, 912, 912])
-        mean_tiles = np.zeros([4, 4, 78, 912, 912])
+        mean_tiles = np.zeros([4, 4, Nframes, Nx, Nx])
+        z0_tiles   = np.zeros([4, 4])
 
         sum_above = np.zeros_like(thresholds)
         sum_below = np.zeros_like(thresholds)
@@ -99,12 +100,12 @@ with open(logfile, "a") as log:
             tiles = split_tiles(stack, mean_tiles)
             mean_tiles += tiles
 
-            # compute mean and derivative of mean along z
-            ri_z   = np.mean(tiles, axis=(3,4))
-            dri_dz = np.diff(ri_z,  axis=2) + 1
-            z_0 = estimate_cell_bottom(dri_dz)
+        # compute base zero-level  
+        for ix in range(Nx):
+            for iy in range(Nx):
+                z0_tiles[ix,iy] = estimate_cell_bottom(mean_tiles[ix,iy])
 
-            print(frame, z_0)
+        print(z0_tiles)
 
             # add to list for experiment
             #ri_z_list.append(ri_z)

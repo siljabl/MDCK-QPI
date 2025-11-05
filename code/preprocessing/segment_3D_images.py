@@ -109,6 +109,7 @@ with open(logfile, "a") as log:
             
             # collect tiles in one average tile
             z0_median = np.median(z0_tiles)
+            print(z0_median)
 
             for ix in range(4):
                 for iy in range(4):

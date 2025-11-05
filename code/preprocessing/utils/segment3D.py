@@ -14,6 +14,16 @@ def get_voxel_size_35mm():
     return np.array([0.946946, 0.155433, 0.155433])
 
 
+def split_tiles(stack, tiles, frame, xsize=912, Nx=4):
+    '''
+    Split stack into tiles
+    '''
+    for ix in range(Nx):
+        for iy in range(Nx):
+            tiles[ix, iy, frame] = stack[:, xsize*iy:xsize*(1+iy), xsize*ix:xsize*(1+ix)]
+
+        return tiles
+
 
 def scale_refractive(n_z):
     n_cell = 1.38

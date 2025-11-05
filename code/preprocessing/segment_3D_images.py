@@ -78,6 +78,9 @@ with open(logfile, "a") as log:
         dri_xdz_list = []
         dri_ydz_list = []
 
+        # array for taking mean at specific tile over all frames
+        mean_tiles = np.zeros([4, 4, 41, 912, 912])
+
         sum_above = np.zeros_like(thresholds)
         sum_below = np.zeros_like(thresholds)
 
@@ -86,88 +89,93 @@ with open(logfile, "a") as log:
         for file in path.glob(f"{exp}*_prob.npy"):
 
             stack_name = f"{path.parent}{os.sep}{file.name.split('_prob.npy')[0]}.tiff"
+            frame = stack_name.split('_')[-1]
+            print(frame)
 
-            # load stacks
-            stack = commonStackReader(stack_name)
-            #MlM_probabilities = commonMultiChannelStackReader(file)
-            MlM_probabilities = np.load(file)
-            cell_prob = MlM_probabilities[:,:,:,1]
+        #     # load stacks
+        #     stack = commonStackReader(stack_name)
+        #     mean_tiles[:, :, frame] = split_tiles(stack, mean_tiles, frame)
+        #     #MlM_probabilities = commonMultiChannelStackReader(file)
+        #     MlM_probabilities = np.load(file)
+        #     cell_prob = MlM_probabilities[:,:,:,1]
 
-            # compute mean and derivative of mean along z
-            ri_xz   = np.mean(stack, axis=1)
-            ri_yz   = np.mean(stack, axis=2)
-            dri_xdz = np.diff(ri_xz, axis=0) + 1
-            dri_ydz = np.diff(ri_yz, axis=0) + 1
+        #     # compute mean and derivative of mean along z
+        #     ri_xz   = np.mean(stack, axis=1)
+        #     ri_yz   = np.mean(stack, axis=2)
+        #     dri_xdz = np.diff(ri_xz, axis=0) + 1
+        #     dri_ydz = np.diff(ri_yz, axis=0) + 1
 
-            # add to list for experiment
-            ri_xz_list.append(ri_xz)
-            ri_yz_list.append(ri_yz)
-            dri_xdz_list.append(dri_xdz)
-            dri_ydz_list.append(dri_ydz)
+        #     # add to list for experiment
+        #     ri_xz_list.append(ri_xz)
+        #     ri_yz_list.append(ri_yz)
+        #     dri_xdz_list.append(dri_xdz)
+        #     dri_ydz_list.append(dri_ydz)
         
-        # compute zero level. same for entire experiment
-        z_0 = estimate_cell_bottom(dri_xdz_list, dri_ydz_list)
-        z_0 = median(z_0, disk(3))
-        plt.imshow(z_0)
-        plt.colorbar()
-        #fig = plot_z_profile([ri_xz_list, dri_xdz_list], stack, z_0)
-        plt.savefig(f"{mhds_dir}{os.sep}{Path(exp).name}_zero_level.png", dpi=300)
-        print(f"zero-level: {z_0}\n")
+        # # compute zero level. same for entire experiment
+        # z_0 = estimate_cell_bottom(dri_xdz_list, dri_ydz_list)
+        # z_0 = median(z_0, disk(3))
+        # plt.imshow(z_0)
+        # plt.colorbar()
+        # #fig = plot_z_profile([ri_xz_list, dri_xdz_list], stack, z_0)
+        # plt.savefig(f"{mhds_dir}{os.sep}{Path(exp).name}_zero_level.png", dpi=300)
+        # print(f"zero-level: {z_0}\n")
 
 
-        # determine threshold
-        print(f"Creating masks for:")
-        for file in path.glob(f"{exp}*_prob.npy"):
-            out_mask = f"{out_dir}{os.sep}{file.name.split('_prob.npy')[0]}_mask.tiff"
-            if os.path.exists(out_mask):
-                continue
-            print(file)
+        # # determine threshold
+        # print(f"Creating masks for:")
+        # for file in path.glob(f"{exp}*_prob.npy"):
+        #     out_mask = f"{out_dir}{os.sep}{file.name.split('_prob.npy')[0]}_mask.tiff"
+        #     if os.path.exists(out_mask):
+        #         continue
+        #     print(file)
 
-            # load probabilities
-            MlM_probabilities = np.load(file)
-            cell_prob = MlM_probabilities[:,:,:,1]
+        #     # load probabilities
+        #     MlM_probabilities = np.load(file)
+        #     cell_prob = MlM_probabilities[:,:,:,1]
 
-            # compute array for determination of MlM threshold
-            for i in range(len(thresholds)):
-                mask = (cell_prob > thresholds[i])
-                sum_above[i] = np.sum(mask[z_0:])
-                sum_below[i] = np.sum(mask[:z_0])
+        #     # compute array for determination of MlM threshold
+        #     for i in range(len(thresholds)):
+        #         mask = (cell_prob > thresholds[i])
+        #         sum_above[i] = np.sum(mask[z_0:])
+        #         sum_below[i] = np.sum(mask[:z_0])
             
-            # apply threshold
-            threshold = determine_threshold(thresholds, sum_above)
-            cell_pred = (cell_prob > threshold)
-            log.write(f'{file.name}, {np.mean(z_0)}, {threshold}, {args.r1_min}, {args.r1_max}, {args.r2}\n')
+        #     # apply threshold
+        #     threshold = determine_threshold(thresholds, sum_above)
+        #     cell_pred = (cell_prob > threshold)
+        #     log.write(f'{file.name}, {np.mean(z_0)}, {threshold}, {args.r1_min}, {args.r1_max}, {args.r2}\n')
 
-            # filter mask
-            tmp_mask = median(cell_pred[np.min(z_0):], kernel_1)
-            tmp_mask = median(tmp_mask,  kernel_2)
+        #     # filter mask
+        #     tmp_mask = median(cell_pred[np.min(z_0):], kernel_1)
+        #     tmp_mask = median(tmp_mask,  kernel_2)
 
-            # make mask with heterogeneous zero-level
-            cell_mask = np.zeros_like(cell_pred)
-            for i in range(len(stack[0])):
-                for j in range(len(stack[0,0])):
-                    cell_mask[:int(z_0[i,j]),i,j] = 0
-                    cell_mask[i,j] *= tmp_mask[i,j]
+        #     # make mask with heterogeneous zero-level
+        #     cell_mask = np.zeros_like(cell_pred)
+        #     for i in range(len(stack[0])):
+        #         for j in range(len(stack[0,0])):
+        #             cell_mask[:int(z_0[i,j]),i,j] = 0
+        #             cell_mask[i,j] *= tmp_mask[i,j]
             
-            # save mask
-            basename = file.stem.split('_prob')[0]
-            tifffile.imwrite(out_mask, np.array(cell_mask, dtype=np.uint8), bigtiff=True)
+        #     # save mask
+        #     basename = file.stem.split('_prob')[0]
+        #     tifffile.imwrite(out_mask, np.array(cell_mask, dtype=np.uint8), bigtiff=True)
 
 
-        # plot illustration of MlM threshold and final mask
-        fig = plot_threshold(thresholds, [sum_above, sum_below], cell_prob.shape, np.mean(z_0))
-        fig.savefig(f"{mhds_dir}{os.sep}{file.name.split('_prob.npy')[0]}_threshold.png", dpi=300)
+        # # plot illustration of MlM threshold and final mask
+        # fig = plot_threshold(thresholds, [sum_above, sum_below], cell_prob.shape, np.mean(z_0))
+        # fig.savefig(f"{mhds_dir}{os.sep}{file.name.split('_prob.npy')[0]}_threshold.png", dpi=300)
 
-        # save as pickle
-        out_dict = {'ri_z_list':        ri_z_list,
-                    'dri_dz_list':      dri_dz_list,
-                    'thresholds':       thresholds,
-                    'sum_above':        sum_above,
-                    'sum_below':        sum_below,
-                    'cell_prob_shape':  cell_prob.shape}
+        # # save as pickle
+        # out_dict = {'ri_xz_list':       ri_xz_list,
+        #             'ri_yz_list':       ri_yz_list,
+        #             'dri_xdz_list':     dri_xdz_list,
+        #             'dri_ydz_list':     dri_ydz_list,
+        #             'thresholds':       thresholds,
+        #             'sum_above':        sum_above,
+        #             'sum_below':        sum_below,
+        #             'cell_prob_shape':  cell_prob.shape}
         
-        with open(f"{mhds_dir}{os.sep}/lists_for_plotting.pkl", 'wb') as handle:
-            pickle.dump(out_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        # with open(f"{mhds_dir}{os.sep}/lists_for_plotting.pkl", 'wb') as handle:
+        #     pickle.dump(out_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
         
 
 

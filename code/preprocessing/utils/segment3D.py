@@ -15,10 +15,12 @@ def get_voxel_size_35mm():
     return np.array([0.946946, 0.155433, 0.155433])
 
 
-def split_tiles(stack, tiles, xsize=912, Nx=4):
+def split_tiles(stack, xsize=912, Nz=87, Nx=4):
     '''
     Split stack into tiles
     '''
+    tiles = np.zeros([4, 4, Nz, Nx, Nx])
+
     for ix in range(Nx):
         for iy in range(Nx):
             tiles[ix, iy] = stack[:, xsize*iy:xsize*(1+iy), xsize*ix:xsize*(1+ix)]

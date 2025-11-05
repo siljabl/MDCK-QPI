@@ -101,7 +101,7 @@ with open(logfile, "a") as log:
             cell_prob = MlM_probabilities[:,:,:,1]
 
             # split up in tiles
-            tiles = split_tiles(stack, mean_tiles)
+            tiles = split_tiles(stack, mean_tiles[frame])
 
             # find mean zero level
             for ix in range(4):

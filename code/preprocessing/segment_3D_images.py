@@ -104,7 +104,7 @@ with open(logfile, "a") as log:
             dri_dz = np.diff(ri_z,  axis=2) + 1
             z_0 = estimate_cell_bottom(dri_dz)
 
-            print(z_0)
+            print(frame, np.shape(ri_z), np.shape(dri_dz), np.shape(z_0))
 
             # add to list for experiment
             #ri_z_list.append(ri_z)

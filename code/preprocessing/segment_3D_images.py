@@ -115,7 +115,7 @@ with open(logfile, "a") as log:
                     z_pad = abs(z_diff)
 
                     if z_pad > 0:
-                        print(z_pad)
+                        print(ix, iy, z_pad)
                         npad = ((z_pad, z_pad), (0, 0), (0, 0))
                         tile_zcorr = np.roll(np.pad(mean_tiles[ix,iy], pad_width=npad), shift=z_diff, axis=0)[z_pad:-z_pad]
                         z0 = estimate_cell_bottom(tile_zcorr)

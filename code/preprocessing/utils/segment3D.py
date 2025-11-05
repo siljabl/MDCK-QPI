@@ -20,6 +20,7 @@ def split_tiles(stack, tiles, xsize=912, Nx=4):
     '''
     for ix in range(Nx):
         for iy in range(Nx):
+            print(ix, iy)
             tiles[ix, iy] = stack[:, xsize*iy:xsize*(1+iy), xsize*ix:xsize*(1+ix)]
 
         return tiles

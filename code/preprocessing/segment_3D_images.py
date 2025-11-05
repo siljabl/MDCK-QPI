@@ -73,11 +73,9 @@ with open(logfile, "a") as log:
     # sort by experiment
     for exp in experiment:
         print(exp)
-        ri_xz_list   = []
-        ri_yz_list   = []
-        dri_xdz_list = []
-        dri_ydz_list = []
-
+        ri_z_list   = []
+        dri_dz_list = []
+        
         # array for taking mean at specific tile over all frames
         tiles      = np.zeros([4, 4, 78, 912, 912])
         mean_tiles = np.zeros([4, 4, 78, 912, 912])
@@ -94,23 +92,23 @@ with open(logfile, "a") as log:
 
             # load stacks
             stack = commonStackReader(stack_name)
+            MlM_probabilities = np.load(file)
+            cell_prob = MlM_probabilities[:,:,:,1]
+
+            # split up in tiles
             tiles = split_tiles(stack, mean_tiles)
             mean_tiles += tiles
-            #MlM_probabilities = commonMultiChannelStackReader(file)
-        #     MlM_probabilities = np.load(file)
-        #     cell_prob = MlM_probabilities[:,:,:,1]
 
-        #     # compute mean and derivative of mean along z
-        #     ri_xz   = np.mean(stack, axis=1)
-        #     ri_yz   = np.mean(stack, axis=2)
-        #     dri_xdz = np.diff(ri_xz, axis=0) + 1
-        #     dri_ydz = np.diff(ri_yz, axis=0) + 1
+            # compute mean and derivative of mean along z
+            ri_z   = np.mean(tiles, axis=(3,4))
+            dri_dz = np.diff(ri_z,  axis=2) + 1
+            z_0 = estimate_cell_bottom(dri_dz)
 
-        #     # add to list for experiment
-        #     ri_xz_list.append(ri_xz)
-        #     ri_yz_list.append(ri_yz)
-        #     dri_xdz_list.append(dri_xdz)
-        #     dri_ydz_list.append(dri_ydz)
+            print(z_0)
+
+            # add to list for experiment
+            #ri_z_list.append(ri_z)
+            #dri_dz_list.append(dri_dz)
         
         # # compute zero level. same for entire experiment
         # z_0 = estimate_cell_bottom(dri_xdz_list, dri_ydz_list)

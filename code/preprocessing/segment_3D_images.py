@@ -114,7 +114,7 @@ with open(logfile, "a") as log:
             # adjust zslice between tiles
             for ix in range(4):
                 for iy in range(4):
-                    tile_zcorr = correct_zslice_tile(mean_tiles[ix,iy], z0_median[frame])
+                    tile_zcorr = correct_zslice_tile(tiles[ix,iy], z0_median[frame])
                     mean_tiles[frame] += tile_zcorr / 16
 
 

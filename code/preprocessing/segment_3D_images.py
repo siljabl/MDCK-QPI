@@ -101,17 +101,28 @@ with open(logfile, "a") as log:
             tiles = split_tiles(stack, mean_tiles)
             mean_tiles += tiles
 
-        # compute base zero-level  
-        for ix in range(4):
-            for iy in range(4):
-                z0_tiles[ix,iy] = estimate_cell_bottom(mean_tiles[ix,iy])
+            # compute base zero-level 
+            mean_tile = np.zeros([Nz, Nx, Nx])
+            for ix in range(4):
+                for iy in range(4):
+                    z0_tiles[ix,iy] = estimate_cell_bottom(mean_tiles[ix,iy])
+            
+            z0_median = np.median(z0_tiles)
 
-        print(z0_tiles)
+            for ix in range(4):
+                for iy in range(4):
+                    z_diff = z0_median - z0_tiles[ix,iy]
+                    npad = ((z_diff, z_diff), (0, 0), (0, 0))
+                    tile_zcorr = np.roll(np.pad(mean_tiles[ix,iy], pad_width=npad), shift=z_diff, axis=0)[z_diff:-z_diff]
+                    z0 = estimate_cell_bottom(tile_zcorr)
+                    print(z0)
 
-            # add to list for experiment
-            #ri_z_list.append(ri_z)
-            #dri_dz_list.append(dri_dz)
-        
+                    mean_tile += tile_zcorr / 16
+
+            
+
+
+
         # # compute zero level. same for entire experiment
         # z_0 = estimate_cell_bottom(dri_xdz_list, dri_ydz_list)
         # z_0 = median(z_0, disk(3))

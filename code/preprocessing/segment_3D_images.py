@@ -101,32 +101,35 @@ with open(logfile, "a") as log:
             tiles = split_tiles(stack, mean_tiles)
             mean_tiles += tiles
 
-            # compute base zero-level 
+            # compute base zero-level for each tile
             mean_tile = np.zeros([Nz, Nx, Nx])
             for ix in range(4):
                 for iy in range(4):
                     z0_tiles[ix,iy] = estimate_cell_bottom(mean_tiles[ix,iy])
             
-            # collect tiles in one average tile
-            z0_median = np.median(np.round(z0_tiles))
+        # collect tiles in one average tile
+        z0_median = np.median(np.round(z0_tiles))
 
-            for ix in range(4):
-                for iy in range(4):
-                    z_diff = int(z0_median - z0_tiles[ix,iy])
-                    z_pad = abs(z_diff)
+        for ix in range(4):
+            for iy in range(4):
+                z_diff = int(z0_median - z0_tiles[ix,iy])
+                z_pad = abs(z_diff)
 
-                    if z_pad > 0:
-                        npad = ((z_pad, z_pad), (0, 0), (0, 0))
-                        tile_zcorr = np.roll(np.pad(mean_tiles[ix,iy], pad_width=npad, mode="edge"), shift=z_diff, axis=0)[z_pad:-z_pad]
+                if z_pad > 0:
+                    npad = ((z_pad, z_pad), (0, 0), (0, 0))
+                    tile_zcorr = np.roll(np.pad(mean_tiles[ix,iy], pad_width=npad, mode="edge"), shift=z_diff, axis=0)[z_pad:-z_pad]
 
-                        mean_tile += tile_zcorr / 16
+                    mean_tile += tile_zcorr / 16
 
-                    elif z_pad == 0:
-                        mean_tile += mean_tiles[ix,iy] / 16
-            
-            # detect tilt of dish
-            z0_plane = estimate_cell_bottom(mean_tile, mode="plane")
-            print(np.shape(z0_plane), z0_plane)
+                elif z_pad == 0:
+                    mean_tile += mean_tiles[ix,iy] / 16
+        
+        # detect tilt of dish
+        z0_points = estimate_cell_bottom(mean_tile, mode="plane")
+        z0_plane  = fit_plane(z0_points)
+
+        np.save("z0_plane.npy", z0_plane)
+        
 
 
         # # compute zero level. same for entire experiment

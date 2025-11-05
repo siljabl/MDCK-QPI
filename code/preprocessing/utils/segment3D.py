@@ -21,8 +21,8 @@ def split_tiles(stack, Nx=912, Nz=78, Ntiles=4):
     '''
     tiles = np.zeros([Ntiles, Ntiles, Nz, Nx, Nx])
 
-    for ix in range(Nx):
-        for iy in range(Nx):
+    for ix in range(Ntiles):
+        for iy in range(Ntiles):
             tiles[ix, iy] = stack[:, Nx*iy:Nx*(1+iy), Nx*ix:Nx*(1+ix)]
 
     return tiles

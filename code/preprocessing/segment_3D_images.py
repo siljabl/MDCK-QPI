@@ -30,6 +30,7 @@ args = parser.parse_args()
 
 Nx = 912
 Nz = 78
+Nframes = 41
 
 # create folders
 in_dir = f"{args.dir}predictions"
@@ -78,8 +79,10 @@ with open(logfile, "a") as log:
         dri_dz_list = []
         
         # array for taking mean at specific tile over all frames
-        mean_tiles = np.zeros([4, 4, Nz, Nx, Nx])
+        mean_tiles = np.zeros([Nframes, Nz, Nx, Nx])
+        mean_tile  = np.zeros([Nz, Nx, Nx])
         z0_tiles   = np.zeros([4, 4])
+        z0_median  = np.zeros(Nframes) 
 
         sum_above = np.zeros_like(thresholds)
         sum_below = np.zeros_like(thresholds)
@@ -99,31 +102,29 @@ with open(logfile, "a") as log:
 
             # split up in tiles
             tiles = split_tiles(stack, mean_tiles)
-            mean_tiles += tiles
 
-            # compute base zero-level for each tile
-            mean_tile = np.zeros([Nz, Nx, Nx])
+            # find mean zero level
             for ix in range(4):
                 for iy in range(4):
-                    z0_tiles[ix,iy] = estimate_cell_bottom(mean_tiles[ix,iy])
-            
-        # collect tiles in one average tile
-        z0_median = np.median(np.round(z0_tiles))
+                    z0_tiles[ix,iy] = estimate_cell_bottom(tiles[ix,iy])
 
-        for ix in range(4):
-            for iy in range(4):
-                z_diff = int(z0_median - z0_tiles[ix,iy])
-                z_pad = abs(z_diff)
+            z0_median[frame] = np.median(np.round(z0_tiles))
+            print("Median z0: ", z0_median[frame])
 
-                if z_pad > 0:
-                    npad = ((z_pad, z_pad), (0, 0), (0, 0))
-                    tile_zcorr = np.roll(np.pad(mean_tiles[ix,iy], pad_width=npad, mode="edge"), shift=z_diff, axis=0)[z_pad:-z_pad]
+            # adjust zslice between tiles
+            for ix in range(4):
+                for iy in range(4):
+                    tile_zcorr = correct_zslice_tile(mean_tiles[ix,iy], z0_median[frame])
+                    mean_tiles[frame] += tile_zcorr / 16
 
-                    mean_tile += tile_zcorr / 16
 
-                elif z_pad == 0:
-                    mean_tile += mean_tiles[ix,iy] / 16
-        
+        # adjust zslice between frames
+        z0_median = np.round(np.median(z0_median))
+
+        for f in range(Nframes):
+            tile_zcorr = correct_zslice_tile(mean_tiles[f], z0_median)
+            mean_tile += tile_zcorr / Nframes
+
         # detect tilt of dish
         z0_points = estimate_cell_bottom(mean_tile, mode="plane")
         z0_plane  = fit_plane(z0_points)

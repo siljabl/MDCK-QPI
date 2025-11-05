@@ -55,6 +55,27 @@ def estimate_cell_bottom(stack, mode="mean"):
     return z0
 
 
+def correct_zslice_tile(tile, z0_median):
+    '''
+    Corrects zslice of tile so it has same median as z0_median
+    '''
+    z_diff = int(z0_median - tile)
+    z_pad = abs(z_diff)
+
+    if z_pad > 0:
+        npad = ((z_pad, z_pad), 
+                (0, 0), 
+                (0, 0))
+        
+        tile_padded = np.pad(tile, pad_width=npad, mode="edge")
+        tile_zcorr  = np.roll(tile_padded, shift=z_diff, axis=0)[z_pad:-z_pad]
+
+    else:
+        tile_zcorr = tile
+
+    return tile_zcorr
+
+
 def plane(params, x, y):
     a, b, c = params
     return a*x + b*y + c
@@ -76,7 +97,7 @@ def fit_plane(Z0):
     Z = Z0.flatten()
 
     flat_params = np.array([0,0, np.mean(Z0)])
-    result = sc.optimize.least_square(residual_plane, flat_params, args=(X, Y, Z))
+    result = sc.optimize.least_squares(residual_plane, flat_params, args=(X, Y, Z))
 
     z_plane = plane(result.x, X, Y)
 

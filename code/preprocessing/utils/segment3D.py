@@ -45,7 +45,7 @@ def estimate_cell_bottom(stack, mode="mean"):
         z0    = np.argmax(dn_dz)
 
     elif mode == "plane":
-        dn_dz = np.diff(n_z, axis=0) + 1
+        dn_dz = np.diff(stack, axis=0) + 1
         z0    = np.argmax(dn_dz, axis=0)
 
     else:

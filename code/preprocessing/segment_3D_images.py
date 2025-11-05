@@ -29,7 +29,7 @@ parser.add_argument('--r2',      type=int, help="radius of kernel 2", default='2
 args = parser.parse_args()
 
 Nx = 912
-Nframes = 41
+Nz = 78
 
 # create folders
 in_dir = f"{args.dir}predictions"
@@ -78,7 +78,7 @@ with open(logfile, "a") as log:
         dri_dz_list = []
         
         # array for taking mean at specific tile over all frames
-        mean_tiles = np.zeros([4, 4, Nframes, Nx, Nx])
+        mean_tiles = np.zeros([4, 4, Nz, Nx, Nx])
         z0_tiles   = np.zeros([4, 4])
 
         sum_above = np.zeros_like(thresholds)

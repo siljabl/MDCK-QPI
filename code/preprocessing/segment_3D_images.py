@@ -102,8 +102,8 @@ with open(logfile, "a") as log:
             mean_tiles += tiles
 
             # compute base zero-level  
-            for ix in range(Nx):
-                for iy in range(Nx):
+            for ix in range(4):
+                for iy in range(4):
                     z0_tiles[ix,iy] = estimate_cell_bottom(mean_tiles[ix,iy])
 
             print(z0_tiles)

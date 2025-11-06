@@ -184,7 +184,7 @@ with open(logfile, "a") as log:
         #     cell_prob  = MlM_probabilities[:,:,:,1]
 
             # apply threshold and split 
-            cell_pred  = (cell_prob > threshold)
+            cell_pred  = (cell_prob > threshold[frame])
             #tiles_pred = split_tiles(cell_pred, Nz=Nz, Nx=Nx)
 
             # filter mask

@@ -110,6 +110,7 @@ with open(logfile, "a") as log:
             for ix in range(4):
                 for iy in range(4):
                     z0_tiles[frame, ix,iy] = estimate_cell_bottom(tiles[ix,iy])
+            print(z0_tiles)
 
             # adjust zslice between tiles so all have same zero-level as z0_median[frame]
             z0_arr[frame] = int(np.round(np.median(z0_tiles[frame])))
@@ -195,7 +196,7 @@ with open(logfile, "a") as log:
 
                     # make mask with heterogeneous zero-level
                     cell_mask[:z0_cutoff, ix*Nx:(ix+1)*Nx, iy*Nx:(iy+1)*Nx] = 0
-                    cell_mask[:,          ix*Nx:(ix+1)*Nx, iy*Nx:(iy+1)*Nx] *= tmp_mask
+                    cell_mask[z0_cutoff:, ix*Nx:(ix+1)*Nx, iy*Nx:(iy+1)*Nx] *= tmp_mask
                     
             # save mask
             basename = file.stem.split('_prob')[0]

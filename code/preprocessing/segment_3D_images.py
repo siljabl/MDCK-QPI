@@ -132,6 +132,7 @@ with open(logfile, "a") as log:
                 sum_below[i] = np.sum(mask[:int(z0_arr[frame])])
 
             # compute threshold
+            print(np.shape(threshold))
             threshold[frame] = determine_threshold(thresholds, sum_above)
 
 

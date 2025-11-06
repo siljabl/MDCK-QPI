@@ -39,10 +39,12 @@ assert os.path.exists(in_dir), "In path does not exist, maybe because of missing
 path = Path(in_dir)
 out_dir  = f"{args.dir}segmentation"
 mhds_dir = f"{out_dir}{os.sep}mhds"
+corrected_dir = f"{out_dir}{os.sep}z_correction"
 
 try:
     os.mkdir(out_dir)
     os.mkdir(mhds_dir)
+    os.mkdir(corrected_dir)
 except:
     pass
 
@@ -109,7 +111,7 @@ with open(logfile, "a") as log:
             # find mean zero level of each tile
             for ix in range(4):
                 for iy in range(4):
-                    z0_tiles[frame, ix,iy] = estimate_cell_bottom(tiles[ix,iy])
+                    z0_tiles[frame, iy, ix] = estimate_cell_bottom(tiles[iy,ix])
             print(z0_tiles[frame])
 
             # adjust zslice between tiles so all have same zero-level as z0_median[frame]
@@ -119,8 +121,8 @@ with open(logfile, "a") as log:
             mean_prob_tile = np.zeros([Nz, Nx, Nx])
             for ix in range(4):
                 for iy in range(4):
-                    tile_zcorr      = correct_zslice_tile(tiles[ix,iy],      z0_tiles[frame, ix, iy], z0_arr[frame])
-                    tile_prob_zcorr = correct_zslice_tile(prob_tiles[ix,iy], z0_tiles[frame, ix, iy], z0_arr[frame])
+                    tile_zcorr      = correct_zslice_tile(tiles[iy,ix],      z0_tiles[frame, iy, ix], z0_arr[frame])
+                    tile_prob_zcorr = correct_zslice_tile(prob_tiles[iy,ix], z0_tiles[frame, iy, ix], z0_arr[frame])
 
                     mean_tiles[frame] += tile_zcorr / 16
                     mean_prob_tile    += tile_prob_zcorr / 16
@@ -187,16 +189,16 @@ with open(logfile, "a") as log:
                 for iy in range(4):
 
                     # finding lower limit on zero-level
-                    z0_cutoff = int(z0_tiles[frame, ix, iy] - z0 + np.min(np.floor(z0_plane)))
+                    z0_cutoff = int(z0_tiles[frame, iy, ix] - z0 + np.min(np.floor(z0_plane)))
                     print(z0_cutoff)
 
                     # apply median filter twice (?)
-                    tmp_mask = median(tiles_pred[ix, iy, z0_cutoff:], kernel_1)
+                    tmp_mask = median(tiles_pred[iy, ix, z0_cutoff:], kernel_1)
                     tmp_mask = median(tmp_mask,  kernel_2)
 
                     # make mask with heterogeneous zero-level
-                    cell_mask[:z0_cutoff, ix*Nx:(ix+1)*Nx, iy*Nx:(iy+1)*Nx] = 0
-                    cell_mask[z0_cutoff:, ix*Nx:(ix+1)*Nx, iy*Nx:(iy+1)*Nx] *= tmp_mask
+                    cell_mask[:z0_cutoff, iy*Nx:(iy+1)*Nx, ix*Nx:(ix+1)*Nx] = 0
+                    cell_mask[z0_cutoff:, iy*Nx:(iy+1)*Nx, ix*Nx:(ix+1)*Nx] *= tmp_mask
                     
             # save mask
             basename = file.stem.split('_prob')[0]

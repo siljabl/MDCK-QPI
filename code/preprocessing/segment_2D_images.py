@@ -27,16 +27,18 @@ processed_path = "data/experimental/processed/"
 
 parser = argparse.ArgumentParser(description="Usage: python segement_2D_images.py dir file"
     )
-parser.add_argument("path",          type=str,    help="Path to data series")
-parser.add_argument("--psize",       type=float,  help="Particle radius at initial frame",                        default=13)
-parser.add_argument("--tau",         type=float,  help="Doubling time of cells (h)",                              default=16)
-parser.add_argument("--s_high",      type=int,    help="kernel size for Gaussian filter applied to data",         default=6)
-parser.add_argument("--s_low",       type=int,    help="kernel size for Gaussian filter subtracting from data",   default=12)
-parser.add_argument("--scaling",     type=int,    help="Holomonitor scaling to µm",                               default=100)
-parser.add_argument("--fmin",        type=int,    help="First useful frame",                                      default=1)
-parser.add_argument("--fmax",        type=int,    help="First useful frame",                                      default=337)
-parser.add_argument("--clear_edge",  action="store_true",   help="Should be True if monolayer is larger than FOV, otherwise False")
-parser.add_argument("--enforce_confluency",       help="Converts false empty regions in data to non-empty for segmentation", action="store_true")
+parser.add_argument("path",           type=str,    help="Path to data series")
+parser.add_argument("--psize",        type=float,  help="Particle radius at initial frame",                        default=13)
+parser.add_argument("--tau",          type=float,  help="Doubling time of cells (h)",                              default=16)
+parser.add_argument("--s_high",       type=int,    help="kernel size for Gaussian filter applied to data",         default=6)
+parser.add_argument("--s_low",        type=int,    help="kernel size for Gaussian filter subtracting from data",   default=12)
+parser.add_argument("--scaling",      type=int,    help="Holomonitor scaling to µm",                               default=100)
+parser.add_argument("--fmin",         type=int,    help="First useful frame",                                      default=1)
+parser.add_argument("--fmax",         type=int,    help="Last useful frame",                                       default=337)
+parser.add_argument("--search_range", type=int,    help="Search range for intermediate tracking",                  default=20)
+parser.add_argument("--memory",       type=int,    help="Memory used for intermediate tracking",                   default=5)
+parser.add_argument("--clear_edge",   action="store_true",   help="Should be True if monolayer is larger than FOV, otherwise False")
+parser.add_argument("--enforce_confluency",        help="Converts false empty regions in data to non-empty for segmentation", action="store_true")
 args = parser.parse_args()
 
 microscope = Path(args.path).stem.split("_")[0]
@@ -113,7 +115,7 @@ for i in tqdm(range(Nframes)):
     if microscope == 'tomocube':
         n_norm = smoothen_normalize_im(n_im, 20, 30)
 
-    raw_areas = get_cell_areas(-n_norm, pos, h_im, clear_edge=False)#rgs.clear_edge)
+    raw_areas = get_cell_areas(-n_norm, pos, h_im, clear_edge=False)
 
     # get cell properties
     cell_props     = regionprops(raw_areas, n_im)
@@ -144,8 +146,8 @@ np.save(f"data/experimental/processed/{dataset}/im_cell_areas_raw.npy", im_areas
 
 
 # remove short lived detections
-search_range = 20
-tracks = tp.link(cells_df, search_range=search_range, memory=5);
+search_range = args.search_range
+tracks = tp.link(cells_df, search_range=search_range, memory=args.memory);
 tracks = tp.filter_stubs(tracks, threshold=config['filtering']['track_threshold']);
 
 

@@ -179,7 +179,7 @@ def main():
     parser.add_argument("--corrected", action="store_true", help="plotting corrected data")
     parser.add_argument("--tracked",   action="store_true", help="plotting tracked data")
     parser.add_argument("--final",     action="store_true", help="plotting final data")
-    parser.add_argument("-o", "--outdir", type=str, help="Output directory")
+    parser.add_argument("-o", "--outdir", type=str, help="Output directory", default="")
     args = parser.parse_args()
 
     assert args.track_tresh > 0 or args.raw or args.corrected, "must provide fmin"

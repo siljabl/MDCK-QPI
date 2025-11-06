@@ -127,8 +127,9 @@ with open(logfile, "a") as log:
             # compute array for determination of MlM threshold
             for i in range(len(thresholds)):
                 mask = (mean_prob_tile > thresholds[i])
-                sum_above[i] = np.sum(mask[z0_arr[frame]:])
-                sum_below[i] = np.sum(mask[:z0_arr[frame]])
+                print(z0_arr[frame])
+                sum_above[i] = np.sum(mask[int(z0_arr[frame]):])
+                sum_below[i] = np.sum(mask[:int(z0_arr[frame])])
 
             # compute threshold
             threshold[frame] = determine_threshold(thresholds, sum_above)
@@ -188,6 +189,7 @@ with open(logfile, "a") as log:
 
                     # finding lower limit on zero-level
                     z0_cutoff = int(z0_tiles[frame, ix, iy] - z0 + np.min(np.floor(z0_plane)))
+                    print(z0_cutoff)
 
                     # apply median filter twice (?)
                     tmp_mask = median(tiles_pred[ix, iy, z0_cutoff:], kernel_1)

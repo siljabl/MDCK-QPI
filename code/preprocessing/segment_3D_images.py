@@ -109,99 +109,105 @@ with open(logfile, "a") as log:
             prob_tiles = split_tiles(cell_prob, Nz=Nz, Nx=Nx)
 
             # find mean zero level of each tile
-            for ix in range(4):
-                for iy in range(4):
-                    z0_tiles[frame, iy, ix] = estimate_cell_bottom(tiles[iy,ix, :, 50:-50, 50:-50])
-            print(z0_tiles[frame])
+            z0 = estimate_cell_bottom(stack)
+            print(z0)
+            # for ix in range(4):
+            #     for iy in range(4):
+            #         z0_tiles[frame, iy, ix] = estimate_cell_bottom(tiles[iy,ix, :, 50:-50, 50:-50])
+            # print(z0_tiles[frame])
 
             # adjust zslice between tiles so all have same zero-level as z0_median[frame]
-            z0_arr[frame] = int(np.round(np.median(z0_tiles[frame])))
+            #z0_arr[frame] = int(np.round(np.median(z0_tiles[frame])))
 
             # The average of all 16 probability tiles in one frame
-            mean_prob_tile = np.zeros([Nz, Nx, Nx])
-            for ix in range(4):
-                for iy in range(4):
-                    tile_zcorr      = correct_zslice_tile(tiles[iy,ix],      z0_tiles[frame, iy, ix], z0_arr[frame])
-                    tile_prob_zcorr = correct_zslice_tile(prob_tiles[iy,ix], z0_tiles[frame, iy, ix], z0_arr[frame])
+            # mean_prob_tile = np.zeros([Nz, Nx, Nx])
+            # for ix in range(4):
+            #     for iy in range(4):
+            #         tile_zcorr      = correct_zslice_tile(tiles[iy,ix],      z0_tiles[frame, iy, ix], z0_arr[frame])
+            #         tile_prob_zcorr = correct_zslice_tile(prob_tiles[iy,ix], z0_tiles[frame, iy, ix], z0_arr[frame])
 
-                    mean_tiles[frame] += tile_zcorr / 16
-                    mean_prob_tile    += tile_prob_zcorr / 16
+            #         mean_tiles[frame] += tile_zcorr / 16
+            #         mean_prob_tile    += tile_prob_zcorr / 16
             
                 
             # compute array for determination of MlM threshold
             for i in range(len(thresholds)):
-                mask = (mean_prob_tile > thresholds[i])
+                #mask = (mean_prob_tile > thresholds[i])
+                mask = (cell_prob > thresholds[i])
                 
-                sum_above[i] = np.sum(mask[int(z0_arr[frame]):])
-                sum_below[i] = np.sum(mask[:int(z0_arr[frame])])
+                #sum_above[i] = np.sum(mask[int(z0_arr[frame]):])
+                #sum_below[i] = np.sum(mask[:int(z0_arr[frame])])
+                sum_above[i] = np.sum(mask[z0:])
+                sum_below[i] = np.sum(mask[:z0])
 
             # compute threshold
             threshold[frame] = determine_threshold(thresholds, sum_above)
 
 
-        # adjust zslice between frames so all have same zero-level as z0
-        z0 = np.round(np.median(z0_arr))
+        # # adjust zslice between frames so all have same zero-level as z0
+        # z0 = np.round(np.median(z0_arr))
 
-        for f in range(Nframes):
-            tile_zcorr = correct_zslice_tile(mean_tiles[f], z0_arr[frame], z0)
-            mean_tile += tile_zcorr / Nframes
+        # for f in range(Nframes):
+        #     tile_zcorr = correct_zslice_tile(mean_tiles[f], z0_arr[frame], z0)
+        #     mean_tile += tile_zcorr / Nframes
 
-        # detect tilt of dish
-        z0_points = estimate_cell_bottom(mean_tile, mode="plane")
-        z0_plane  = fit_plane(z0_points).reshape(Nx, Nx)
+        # # detect tilt of dish
+        # z0_points = estimate_cell_bottom(mean_tile, mode="plane")
+        # z0_plane  = fit_plane(z0_points).reshape(Nx, Nx)
 
-        # saving where?
-        np.save(f"{mhds_dir}{os.sep}z0_plane.npy", z0_plane)
-        log.write(f'{file.name}, {z0}, {threshold}, {args.r1_min}, {args.r1_max}, {args.r2}\n')
+        # # saving where?
+        # np.save(f"{mhds_dir}{os.sep}z0_plane.npy", z0_plane)
+        # log.write(f'{file.name}, {z0}, {threshold}, {args.r1_min}, {args.r1_max}, {args.r2}\n')
 
-        # # compute zero level. same for entire experiment
-        # z_0 = estimate_cell_bottom(dri_xdz_list, dri_ydz_list)
-        # z_0 = median(z_0, disk(3))
-        # plt.imshow(z_0)
-        # plt.colorbar()
-        # #fig = plot_z_profile([ri_xz_list, dri_xdz_list], stack, z_0)
-        # plt.savefig(f"{mhds_dir}{os.sep}{Path(exp).name}_zero_level.png", dpi=300)
-        # print(f"zero-level: {z_0}\n")
+        # # # compute zero level. same for entire experiment
+        # # z_0 = estimate_cell_bottom(dri_xdz_list, dri_ydz_list)
+        # # z_0 = median(z_0, disk(3))
+        # # plt.imshow(z_0)
+        # # plt.colorbar()
+        # # #fig = plot_z_profile([ri_xz_list, dri_xdz_list], stack, z_0)
+        # # plt.savefig(f"{mhds_dir}{os.sep}{Path(exp).name}_zero_level.png", dpi=300)
+        # # print(f"zero-level: {z_0}\n")
 
 
-        # determine threshold
-        print(f"Creating masks for:")
-        for file in path.glob(f"{exp}*_prob.npy"):
+        # # determine threshold
+        # print(f"Creating masks for:")
+        # for file in path.glob(f"{exp}*_prob.npy"):
             out_mask = f"{out_dir}{os.sep}{file.name.split('_prob.npy')[0]}_mask.tiff"
-            if os.path.exists(out_mask):
-                continue
-            frame = int(out_mask.split('_')[-2])
-            print(file)
-            print(f"Frame {frame}")
+        #     if os.path.exists(out_mask):
+        #         continue
+        #     frame = int(out_mask.split('_')[-2])
+        #     print(file)
+        #     print(f"Frame {frame}")
 
-            # load probabilities
-            MlM_probabilities = np.load(file)
-            cell_prob  = MlM_probabilities[:,:,:,1]
+        #     # load probabilities
+        #     MlM_probabilities = np.load(file)
+        #     cell_prob  = MlM_probabilities[:,:,:,1]
 
             # apply threshold and split 
             cell_pred  = (cell_prob > threshold)
-            tiles_pred = split_tiles(cell_pred, Nz=Nz, Nx=Nx)
+            #tiles_pred = split_tiles(cell_pred, Nz=Nz, Nx=Nx)
 
             # filter mask
-            cell_mask = np.zeros_like(cell_prob)
+            tmp_mask = median(cell_pred, kernel_1)
+            tmp_mask = median(tmp_mask,  kernel_2)
+            cell_mask = tmp_mask
 
-            for ix in range(4):
-                for iy in range(4):
+            # for ix in range(4):
+            #     for iy in range(4):
 
-                    # finding lower limit on zero-level
-                    z0_cutoff = int(z0_tiles[frame, iy, ix] - z0 + np.min(np.floor(z0_plane)))
-                    print(z0_cutoff)
+            #         # finding lower limit on zero-level
+            #         z0_cutoff = z0#int(z0_tiles[frame, iy, ix] - z0 + np.min(np.floor(z0_plane)))
+            #         print(z0_cutoff)
 
-                    # apply median filter twice (?)
-                    tmp_mask = median(tiles_pred[iy, ix, z0_cutoff:], kernel_1)
-                    tmp_mask = median(tmp_mask,  kernel_2)
+            #         # apply median filter twice (?)
+            #         tmp_mask = median(tiles_pred[iy, ix, z0_cutoff:], kernel_1)
+            #         tmp_mask = median(tmp_mask,  kernel_2)
 
-                    # make mask with heterogeneous zero-level
-                    cell_mask[:z0_cutoff, iy*Nx:(iy+1)*Nx, ix*Nx:(ix+1)*Nx] = 0
-                    cell_mask[z0_cutoff:, iy*Nx:(iy+1)*Nx, ix*Nx:(ix+1)*Nx] *= tmp_mask
+            #         # make mask with heterogeneous zero-level
+            #         cell_mask[:z0_cutoff, iy*Nx:(iy+1)*Nx, ix*Nx:(ix+1)*Nx] = 0
+            #         cell_mask[z0_cutoff:, iy*Nx:(iy+1)*Nx, ix*Nx:(ix+1)*Nx] *= tmp_mask
                     
             # save mask
-            basename = file.stem.split('_prob')[0]
             tifffile.imwrite(out_mask, np.array(cell_mask, dtype=np.uint8), bigtiff=True)
 
 

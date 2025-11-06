@@ -111,7 +111,7 @@ with open(logfile, "a") as log:
             # find mean zero level of each tile
             for ix in range(4):
                 for iy in range(4):
-                    z0_tiles[frame, iy, ix] = estimate_cell_bottom(tiles[iy,ix, 50:-50, 50:-50])
+                    z0_tiles[frame, iy, ix] = estimate_cell_bottom(tiles[iy,ix, :, 50:-50, 50:-50])
             print(z0_tiles[frame])
 
             # adjust zslice between tiles so all have same zero-level as z0_median[frame]

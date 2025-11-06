@@ -299,7 +299,7 @@ def main():
         if args.raw:
             sufix = "_raw"
         elif args.corrected:
-            sufix = "_corrected"
+            sufix = "_corrected_8"
         elif args.tracked:
             sufix = "_tracked"
         else:

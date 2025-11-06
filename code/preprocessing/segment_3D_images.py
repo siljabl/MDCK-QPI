@@ -110,7 +110,7 @@ with open(logfile, "a") as log:
             for ix in range(4):
                 for iy in range(4):
                     z0_tiles[frame, ix,iy] = estimate_cell_bottom(tiles[ix,iy])
-            print(z0_tiles)
+            print(z0_tiles[frame])
 
             # adjust zslice between tiles so all have same zero-level as z0_median[frame]
             z0_arr[frame] = int(np.round(np.median(z0_tiles[frame])))

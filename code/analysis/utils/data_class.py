@@ -29,9 +29,11 @@ class SegmentationData:
         A = df.pivot(index='frame', columns='particle', values='area').to_numpy() * xy_to_um**2
         h = df.pivot(index='frame', columns='particle', values='hmean').to_numpy()
 
-        # label  = df.pivot(index='frame', columns='particle', values='label').to_numpy()
-        # aminor = df.pivot(index='frame', columns='particle', values='a_min').to_numpy()# * xy_to_um
-        # amajor = df.pivot(index='frame', columns='particle', values='a_max').to_numpy()# * xy_to_um
+        label  = df.pivot(index='frame', columns='particle', values='label').to_numpy()
+        aminor = df.pivot(index='frame', columns='particle', values='a_min').to_numpy() * xy_to_um
+        amajor = df.pivot(index='frame', columns='particle', values='a_max').to_numpy() * xy_to_um
+        theta  = df.pivot(index='frame', columns='particle', values='theta').to_numpy()
+        ecc    = df.pivot(index='frame', columns='particle', values='ecc').to_numpy()
 
         self.x = np.ma.masked_where(np.isnan(x), x)
         self.y = np.ma.masked_where(np.isnan(y), y)
@@ -41,10 +43,11 @@ class SegmentationData:
         self.dx = np.ma.diff(self.x, axis=0)
         self.dy = np.ma.diff(self.y, axis=0)
 
-
-        # self.label = np.ma.masked_where(np.isnan(label), label)
-        # self.aminor = np.ma.masked_where(np.isnan(aminor), aminor)
-        # self.amajor = np.ma.masked_where(np.isnan(amajor), amajor)
+        self.label  = np.ma.masked_where(np.isnan(label),  label)
+        self.aminor = np.ma.masked_where(np.isnan(aminor), aminor)
+        self.amajor = np.ma.masked_where(np.isnan(amajor), amajor)
+        self.theta  = np.ma.masked_where(np.isnan(amajor), theta)
+        self.ecc    = np.ma.masked_where(np.isnan(amajor), ecc)
 
         self.density = global_density(self.A)
 

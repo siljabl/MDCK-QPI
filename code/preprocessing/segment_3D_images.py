@@ -80,7 +80,6 @@ with open(logfile, "a") as log:
         
         # array for taking mean at specific tile over all frames
         mean_tiles     = np.zeros([Nframes, Nz, Nx, Nx])        # The average of all 16 tiles in one frame
-        mean_prob_tile = np.zeros([Nz, Nx, Nx])                 # The average of all 16 probability tiles in one frame
         mean_tile      = np.zeros([Nz, Nx, Nx])                 # The average of the average tile of all frames
         z0_tiles       = np.zeros([Nframes, 4, 4])              # The average zero-level in all tiles in one frame
         z0_arr         = np.zeros(Nframes)                      # The average zero-level in all frames
@@ -115,6 +114,8 @@ with open(logfile, "a") as log:
             # adjust zslice between tiles so all have same zero-level as z0_median[frame]
             z0_arr[frame] = int(np.round(np.median(z0_tiles[frame])))
 
+            # The average of all 16 probability tiles in one frame
+            mean_prob_tile = np.zeros([Nz, Nx, Nx])
             for ix in range(4):
                 for iy in range(4):
                     tile_zcorr      = correct_zslice_tile(tiles[ix,iy],      z0_tiles[frame, ix, iy], z0_arr[frame])
@@ -127,12 +128,11 @@ with open(logfile, "a") as log:
             # compute array for determination of MlM threshold
             for i in range(len(thresholds)):
                 mask = (mean_prob_tile > thresholds[i])
-                print(z0_arr[frame])
+                
                 sum_above[i] = np.sum(mask[int(z0_arr[frame]):])
                 sum_below[i] = np.sum(mask[:int(z0_arr[frame])])
 
             # compute threshold
-            print(np.shape(threshold))
             threshold[frame] = determine_threshold(thresholds, sum_above)
 
 
@@ -148,11 +148,8 @@ with open(logfile, "a") as log:
         z0_plane  = fit_plane(z0_points).reshape(Nx, Nx)
 
         # saving where?
-        np.save("z0_plane.npy", z0_plane)
-        log.write(f'{file.name}, {np.mean(z0_arr[frame])}, {threshold}, {args.r1_min}, {args.r1_max}, {args.r2}\n')
-
-        # finding lower limit on zero-level
-        z0_cutoff_tiles = z0_tiles - z0 + np.min(np.floor(z0_plane))
+        np.save(f"{mhds_dir}{os.sep}z0_plane.npy", z0_plane)
+        log.write(f'{file.name}, {z0}, {threshold}, {args.r1_min}, {args.r1_max}, {args.r2}\n')
 
         # # compute zero level. same for entire experiment
         # z_0 = estimate_cell_bottom(dri_xdz_list, dri_ydz_list)

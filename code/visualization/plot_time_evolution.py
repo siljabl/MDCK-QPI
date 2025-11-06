@@ -19,9 +19,9 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 mpl.use('Agg')
 
-sys.path.append("code/analysis")
-from utils.data_class import SegmentationData
-from utils.variation_functions import global_density
+sys.path.append("code/analysis/utils")
+from data_class import SegmentationData
+from variation_functions import global_density
 
 sys.path.append("code/preprocessing/utils")
 from file_handling import *

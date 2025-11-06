@@ -19,6 +19,7 @@ parser.add_argument('-m', '--method',  type=str, help="method for computing heig
 parser.add_argument('-s', '--scaling', type=int, help="value that Tomocube data is scaled with",       default=10_000)
 args = parser.parse_args()
 
+n_cell = 1.38
 
 # Folders
 in_dir = f"{args.dir}segmentation"
@@ -44,6 +45,7 @@ positions = []
 for file in path.glob("*_HT3D_0_mask.tiff"):
     positions.append(file.stem.split("_HT3D")[0])
 
+
 # loop through all positions in folder
 assert len(positions) > 0
 for pos in positions:
@@ -65,6 +67,7 @@ for pos in positions:
 
         # compute and save refractive index average in z
         im_n_avrg = refractive_index_uint16(stack, mask, im_heights)
+        im_n_avrg = im_n_avrg - np.mean(im_n_avrg) + n_cell * args.scaling      # scale to have mean around 1.38
         imageio.imwrite(f"{n_dir}{os.sep}{out_name}_mean_refractive.tiff", np.array(im_n_avrg,  dtype=np.uint16))
 
 config = {"date": datetime.today().strftime('%Y-%m-%d'),

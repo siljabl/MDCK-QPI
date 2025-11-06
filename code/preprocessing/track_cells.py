@@ -46,6 +46,10 @@ Acells = np.concatenate([[cell.area for cell in cells] for cells in cellprops])
 hcells = np.concatenate([[cell.mean_intensity for cell in cells] for cells in cellprops])
 Lcells = np.concatenate([[cell.label for cell in cells] for cells in cellprops])
 Fcells = np.concatenate([[frame for cell in cellprops[frame]] for frame in range(len(cellprops))])
+amajor = np.concatenate([[cell.axis_major_length for cell in cells] for cells in cellprops])
+aminor = np.concatenate([[cell.axis_minor_length for cell in cells] for cells in cellprops])
+orientation  = np.concatenate([[cell.orientation for cell in cells] for cells in cellprops])
+eccentricity = np.concatenate([[cell.eccentricity for cell in cells] for cells in cellprops])
 pos_cells = np.concatenate([[cell.centroid_weighted for cell in cells] for cells in cellprops])
 
 cells_df = pd.DataFrame({'x': pos_cells.T[1],
@@ -53,6 +57,10 @@ cells_df = pd.DataFrame({'x': pos_cells.T[1],
                          'area': Acells / args.a_scale,
                          'hmean': hcells,
                          'label': Lcells, 
+                         'a_max': amajor,
+                         'a_min': aminor,
+                         'theta': orientation, 
+                         'ecc': eccentricity,
                          'frame': Fcells})
 
 
@@ -81,19 +89,6 @@ for i in range(len(im_areas_tracked)):
 # Save im_areas
 np.save(f"data/experimental/processed/{dataset}/im_cell_areas_tracked.npy", im_areas_tracked)
 
-
-# # Save dataframe as masked array?
-# cellprops = [regionprops(im_areas_tracked[i], im_height[fmin+i]) for i in range(len(im_areas_tracked))]
-
-# Ncells = [len(cells) for cells in cellprops]
-# Acells = [[cell.area for cell in cells] for cells in cellprops]
-# hcells = [[cell.mean_intensity for cell in cells] for cells in cellprops]
-# Fcells = [[frame for cell in cellprops[frame]] for frame in range(len(cellprops))]
-
-# Acells = np.concatenate(Acells)
-# hcells = np.concatenate(hcells)
-# Fcells = np.concatenate(Fcells)
-# Vcells = hcells * Acells
 
 # set microscope specific parameters
 microscope = Path(dataset).stem.split("_")[0]

@@ -87,7 +87,7 @@ with open(logfile, "a") as log:
 
         sum_above = np.zeros_like(thresholds)
         sum_below = np.zeros_like(thresholds)
-        threshold = np.zeros_like(Nframes)
+        threshold = np.zeros(Nframes)
 
         # compute list for determination of zero level
         print(f"\nDetermining zero-level for experiment {exp} ...")

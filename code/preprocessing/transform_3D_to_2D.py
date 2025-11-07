@@ -17,7 +17,7 @@ from utils.segment3D  import *
 def correct_cell_bottom(mask, full_tile_size=958):
         
         # determine zero-level
-        z0_ref   = estimate_cell_bottom_reference(mask)
+        z0_ref   = estimate_cell_bottom(mask)
         
         # splitting stack in tiles
         tiles = split_tiles(mask) 

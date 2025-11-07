@@ -98,27 +98,20 @@ def scale_refractive(n_z):
 
 
 
-# def estimate_cell_bottom(stack, mode="mean"):
-#     '''
-#     Estimates first z-slice with cells.
-#     Assumes it is where derivative of refractive index is max.
-#     dn_dz = np.diff(np.mean(n, axis=(1,2))), i.e. the derivative along z of the mean refractive index of each stack
-#     '''
-#     if mode == "mean":
-#         n_z   = np.mean(stack, axis=(1,2))
-#         dn_dz = np.diff(n_z) + 1
-#         z0    = np.argmax(dn_dz / n_z[:-1])
+def estimate_cell_bottom(stack):
+    '''
+    Estimates first z-slice with cells.
+    Assumes it is where derivative of refractive index is max.
+    dn_dz = np.diff(np.mean(n, axis=(1,2))), i.e. the derivative along z of the mean refractive index of each stack
+    '''
 
-#     elif mode == "plane":
-#         dn_dz = np.diff(stack, axis=0) + 1
-#         z0    = np.argmax(dn_dz, axis=0)
+    n_z   = np.mean(stack, axis=(1,2))
+    dn_dz = np.diff(n_z) + 1
+    z0    = np.argmax(dn_dz / n_z[:-1])
 
-#     else:
-#         print("Error: doesn't recognize mode.")
+    return z0
 
-#     return z0
 
-# Find cell bottom reference
 def estimate_cell_bottom_reference(mask, f_crit=0.5):
     dims = np.shape(mask)
 

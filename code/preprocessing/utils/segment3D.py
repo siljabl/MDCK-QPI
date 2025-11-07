@@ -15,17 +15,79 @@ def get_voxel_size_35mm():
     return np.array([0.946946, 0.155433, 0.155433])
 
 
-def split_tiles(stack, Nx=912, Nz=78, Ntiles=4):
-    '''
-    Split stack into tiles
-    '''
-    tiles = np.zeros([Ntiles, Ntiles, Nz, Nx, Nx])
 
+def split_tiles(stack, tile_size=850, full_tile_size=958, Ntiles=4):
+    '''
+    Split a 3D stack into tiles with edge removed.
+
+    Parameters:
+    - stack: 3D numpy array of shape (Nz, Nxy, Nxy), where:
+        - Nz: Number of slices in the z-dimension.
+        - Nxy: Size of the xy dimensions.
+    - tile_size: The size of the tile to extract (default is 850).
+    - full_tile_size: The size of the full tile before edge removal (default is 958).
+    - Ntiles: The number of tiles to create along each axis (default is 4).
+
+    Returns:
+    - tiles: A 5D numpy array of shape (Ntiles, Ntiles, Nz, tile_size, tile_size),
+             containing the extracted tiles.
+    '''
+
+    # Get dimensions of the input stack
+    Nz, Nxy, _ = np.shape(stack)  # Extract the number of z slices and size of xy dimension
+    dxy = int(tile_size / 2)      # Calculate half the tile size for centered indexing
+
+    # Define the edge indices for extracting tiles ( centering the extraction within bounds )
+    xy_edge = np.array([0, Nxy / 2 - full_tile_size, Nxy / 2, Nxy / 2 + full_tile_size, Nxy], dtype=int)
+    
+    # Initialize an array to hold the extracted tiles
+    tiles = np.zeros([Ntiles, Ntiles, Nz, tile_size, tile_size])
+
+    # Loop over each tile's position
     for ix in range(Ntiles):
         for iy in range(Ntiles):
-            tiles[ix, iy] = stack[:, Nx*iy:Nx*(1+iy), Nx*ix:Nx*(1+ix)]
+            # Extract a tile from the stack using the defined edge indices
+            tile = stack[:, xy_edge[iy]:xy_edge[1 + iy], xy_edge[ix]:xy_edge[1 + ix]]
+            
+            # Get the current tile's dimensions
+            dims = np.shape(tile)
+            xmid = int(dims[2] / 2)  # Calculate the mid-point for x dimension
+            ymid = int(dims[1] / 2)  # Calculate the mid-point for y dimension
 
-    return tiles
+            # Center the tile by removing the edges using calculated half-widths (dxy)
+            tiles[iy, ix] = tile[:, ymid - dxy:ymid + dxy, xmid - dxy:xmid + dxy]
+
+    return tiles  # Return the array of tiles
+
+
+
+def combine_tiles(tile, weight_tile, Nxy=3648, full_tile_size=958, Ntiles=4):
+    '''
+    Combine tiles into the original stack
+    '''
+
+    # Define the edge indices for extracting tiles ( centering the extraction within bounds )
+    xy_edge = np.array([0, Nxy / 2 - full_tile_size, Nxy / 2, Nxy / 2 + full_tile_size, Nxy], dtype=int)
+    
+    # Calculate the dimensions of the full stack
+    full_image = np.zeros([Nxy, Nxy])  # Initialize the full stack array
+    mid = int(full_tile_size / 2)
+
+    # Loop through each tile to combine them into the full stack
+    for ix in range(Ntiles):
+        for iy in range(Ntiles):
+
+            # Get the current tile's dimensions
+            dx = int((xy_edge[ix+1] - xy_edge[ix]) / 2)
+            dy = int((xy_edge[iy+1] - xy_edge[iy]) / 2)
+
+            # Center the tile by removing the edges using calculated half-widths (dxy)
+            z0_plane = tile[mid-dy:mid+dy, mid-dx:mid+dx]
+            w = weight_tile[iy, ix]
+            full_image[xy_edge[iy]:xy_edge[iy+1], xy_edge[ix]:xy_edge[ix+1]] = z0_plane * w
+
+    return full_image
+
 
 
 def scale_refractive(n_z):
@@ -36,53 +98,82 @@ def scale_refractive(n_z):
 
 
 
-def estimate_cell_bottom(stack, mode="mean"):
-    '''
-    Estimates first z-slice with cells.
-    Assumes it is where derivative of refractive index is max.
-    dn_dz = np.diff(np.mean(n, axis=(1,2))), i.e. the derivative along z of the mean refractive index of each stack
-    '''
-    if mode == "mean":
-        n_z   = np.mean(stack, axis=(1,2))
-        dn_dz = np.diff(n_z) + 1
-        z0    = np.argmax(dn_dz)
+# def estimate_cell_bottom(stack, mode="mean"):
+#     '''
+#     Estimates first z-slice with cells.
+#     Assumes it is where derivative of refractive index is max.
+#     dn_dz = np.diff(np.mean(n, axis=(1,2))), i.e. the derivative along z of the mean refractive index of each stack
+#     '''
+#     if mode == "mean":
+#         n_z   = np.mean(stack, axis=(1,2))
+#         dn_dz = np.diff(n_z) + 1
+#         z0    = np.argmax(dn_dz / n_z[:-1])
 
-    elif mode == "plane":
-        dn_dz = np.diff(stack, axis=0) + 1
-        z0    = np.argmax(dn_dz, axis=0)
+#     elif mode == "plane":
+#         dn_dz = np.diff(stack, axis=0) + 1
+#         z0    = np.argmax(dn_dz, axis=0)
 
-    else:
-        print("Error: doesn't recognize mode.")
+#     else:
+#         print("Error: doesn't recognize mode.")
+
+#     return z0
+
+# Find cell bottom reference
+def estimate_cell_bottom_reference(mask, f_crit=0.5):
+    dims = np.shape(mask)
+
+    # compute fraction of voxels that are cell along z-axis
+    f_cells = np.sum(mask, axis=(1,2)) / (dims[1] * dims[2])
+    zslice  = np.arange(len(f_cells))
+
+    # use first z-slice above f_crit as reference
+    zslice_mask = zslice[f_cells > f_crit]
+    z0 = zslice_mask[np.argmin(zslice_mask)]
 
     return z0
 
 
-def correct_zslice_tile(tile, z0_tile, z0_median):
-    '''
-    Corrects zslice of tile so it has same median as z0_median
 
-    tile:      stack of tile
-    z0_tile:   median zero-level for tile
-    z0_median: median zero-level for full stack
-    '''
+def update_cell_mask(mask, z0, z0_plane):
+
+    new_mask = np.copy(mask).astype(float)
+    new_mask[z0] = 1
+    new_mask[:z0] = 0
+    new_mask[z0-1] = z0_plane
+    new_mask[z0-2] = (z0_plane-1) * (z0_plane > 1)
+
+    return new_mask
+
+
+
+# def correct_zslice_tile(tile, z0_tile, z0_median):
+#     '''
+#     Corrects zslice of tile so it has same median as z0_median
+
+#     tile:      stack of tile
+#     z0_tile:   median zero-level for tile
+#     z0_median: median zero-level for full stack
+#     '''
     
-    z_diff = int(z0_median - z0_tile)
-    z_pad = abs(z_diff)
+#     z_diff = int(z0_median - z0_tile)
+#     z_pad = abs(z_diff)
 
-    if z_pad > 0:
-        npad = ((z_pad, z_pad), 
-                (0, 0), 
-                (0, 0))
+#     if z_pad > 0:
+#         npad = ((z_pad, z_pad), 
+#                 (0, 0), 
+#                 (0, 0))
         
-        tile_padded = np.pad(tile, pad_width=npad, mode="edge")
-        tile_zcorr  = np.roll(tile_padded, shift=z_diff, axis=0)[z_pad:-z_pad]
+#         tile_padded = np.pad(tile, pad_width=npad, mode="edge")
+#         tile_zcorr  = np.roll(tile_padded, shift=z_diff, axis=0)[z_pad:-z_pad]
 
-    else:
-        tile_zcorr = tile
+#     else:
+#         tile_zcorr = tile
 
-    return tile_zcorr
+#     return tile_zcorr
 
 
+
+# Fit plane to cell bottom
 def plane(params, x, y):
     a, b, c = params
     return a*x + b*y + c
@@ -91,14 +182,16 @@ def residual_plane(params, X, Y, Z):
     return Z - plane(params, X, Y)
 
 
-def fit_plane(Z0):
+def fit_plane(Z0, full_dims):
     '''
-    Fit linear plane to z0 data points
+    Fit linear plane to z0 data points and returning plane for full tile
     '''
 
     dims = np.shape(Z0)
-    Y, X = np.meshgrid(np.arange(dims[0]), np.arange(dims[1]))
+    Y, X = np.meshgrid(np.arange(dims[0]), 
+                       np.arange(dims[1]))
 
+    # tile without edges
     X = X.flatten()
     Y = Y.flatten()
     Z = Z0.flatten()
@@ -106,9 +199,17 @@ def fit_plane(Z0):
     flat_params = np.array([0,0, np.mean(Z0)])
     result = sc.optimize.least_squares(residual_plane, flat_params, args=(X, Y, Z))
 
+    # tile with edges
+    dim_diff = int(full_dims[0] - dims[0]) / 2
+    Y, X = np.meshgrid(np.arange(full_dims[0]) - dim_diff, 
+                       np.arange(full_dims[1]) - dim_diff)
+
+    X = X.flatten()
+    Y = Y.flatten()
+
     z_plane = plane(result.x, X, Y)
 
-    return z_plane
+    return z_plane.reshape(full_dims[0], full_dims[1])
 
 
 
@@ -144,7 +245,7 @@ def generate_kernel(r_min, r_max):
 
 
 
-def compute_height(cell_pred, method="sum"):
+def compute_height(cell_pred, z0_plane, method="sum"):
     '''
     Computes cell heights either by summing voxels or taking the difference between min and max.
     Assumes prediction voxels are 0 or 1. Returns height in units of voxels.

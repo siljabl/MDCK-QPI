@@ -105,8 +105,8 @@ with open(logfile, "a") as log:
             cell_prob = MlM_probabilities[:,:,:,1]
 
             # split up in tiles for individual detection of zero-level
-            tiles      = split_tiles(stack,     Nz=Nz, Nx=Nx)
-            prob_tiles = split_tiles(cell_prob, Nz=Nz, Nx=Nx)
+            #tiles      = split_tiles(stack,     Nz=Nz, Nx=Nx)
+            #prob_tiles = split_tiles(cell_prob, Nz=Nz, Nx=Nx)
 
             # find mean zero level of each tile
             z0 = estimate_cell_bottom(stack)
@@ -138,7 +138,7 @@ with open(logfile, "a") as log:
                 #sum_above[i] = np.sum(mask[int(z0_arr[frame]):])
                 #sum_below[i] = np.sum(mask[:int(z0_arr[frame])])
                 sum_above[i] = np.sum(mask[z0:])
-                sum_below[i] = np.sum(mask[:z0])
+                #sum_below[i] = np.sum(mask[:z0])
 
             # compute threshold
             threshold[frame] = determine_threshold(thresholds, sum_above)
@@ -188,9 +188,9 @@ with open(logfile, "a") as log:
             #tiles_pred = split_tiles(cell_pred, Nz=Nz, Nx=Nx)
 
             # filter mask
-            tmp_mask = median(cell_pred, kernel_1)
-            tmp_mask = median(tmp_mask,  kernel_2)
-            cell_mask = tmp_mask
+            cell_mask = median(cell_pred, kernel_1)
+            #tmp_mask = median(tmp_mask,  kernel_2)
+            #cell_mask = tmp_mask
 
             # for ix in range(4):
             #     for iy in range(4):

@@ -245,7 +245,7 @@ def generate_kernel(r_min, r_max):
 
 
 
-def compute_height(cell_pred, z0_plane, method="sum"):
+def compute_height(cell_pred, method="sum"):
     '''
     Computes cell heights either by summing voxels or taking the difference between min and max.
     Assumes prediction voxels are 0 or 1. Returns height in units of voxels.

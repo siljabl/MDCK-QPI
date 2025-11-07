@@ -136,7 +136,7 @@ def estimate_cell_bottom_reference(mask, f_crit=0.5):
 
 def update_cell_mask(mask, z0, z0_plane):
 
-    new_mask = np.copy(mask)
+    new_mask = np.copy(mask).astype(float)
     new_mask[z0] = 1
     new_mask[:z0] = 0
     new_mask[z0-1] = z0_plane
@@ -146,30 +146,30 @@ def update_cell_mask(mask, z0, z0_plane):
 
 
 
-def correct_zslice_tile(tile, z0_tile, z0_median):
-    '''
-    Corrects zslice of tile so it has same median as z0_median
+# def correct_zslice_tile(tile, z0_tile, z0_median):
+#     '''
+#     Corrects zslice of tile so it has same median as z0_median
 
-    tile:      stack of tile
-    z0_tile:   median zero-level for tile
-    z0_median: median zero-level for full stack
-    '''
+#     tile:      stack of tile
+#     z0_tile:   median zero-level for tile
+#     z0_median: median zero-level for full stack
+#     '''
     
-    z_diff = int(z0_median - z0_tile)
-    z_pad = abs(z_diff)
+#     z_diff = int(z0_median - z0_tile)
+#     z_pad = abs(z_diff)
 
-    if z_pad > 0:
-        npad = ((z_pad, z_pad), 
-                (0, 0), 
-                (0, 0))
+#     if z_pad > 0:
+#         npad = ((z_pad, z_pad), 
+#                 (0, 0), 
+#                 (0, 0))
         
-        tile_padded = np.pad(tile, pad_width=npad, mode="edge")
-        tile_zcorr  = np.roll(tile_padded, shift=z_diff, axis=0)[z_pad:-z_pad]
+#         tile_padded = np.pad(tile, pad_width=npad, mode="edge")
+#         tile_zcorr  = np.roll(tile_padded, shift=z_diff, axis=0)[z_pad:-z_pad]
 
-    else:
-        tile_zcorr = tile
+#     else:
+#         tile_zcorr = tile
 
-    return tile_zcorr
+#     return tile_zcorr
 
 
 

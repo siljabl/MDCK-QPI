@@ -21,6 +21,7 @@ from skimage.measure import regionprops
 
 from tqdm import tqdm
 from pathlib import Path
+from scipy.stats import linregress
 from matplotlib_scalebar.scalebar import ScaleBar
 
 import matplotlib
@@ -103,6 +104,48 @@ def plot_cell_height(ax, frame, cellprop, hmin=0, hmax=11):
     return 0
 
 
+
+def plot_cell_area(ax, frame, cellprop, Ascale, Amin=-1.1, Amax=1.1, xy_to_um=0.15):
+    """ 
+    Plotting imshow of segmented cell areas with faces colors by average height
+
+    Parameters:
+    ax:       ax object to plot data on
+    frame:    frame of raw data to plot as heatmap
+    cellprop: list of regionprop of all cells in frame
+    hmin:     min height in heatmap
+    hmax:     max height in heatmap
+    """
+    
+    A_cmap = sns.color_palette("Greens",   as_cmap=True)
+    e_cmap = mpl.colors.ListedColormap(['none', 'w'])
+
+    A_mean = np.zeros_like(frame, dtype=np.float64)
+    e_im   = np.zeros_like(frame, dtype=int)
+
+    for cell in cellprop:
+
+        # isolate cell
+        cell_mask = (frame == cell.label)
+
+        # cell areas
+        A_mean[cell_mask] = np.log(cell.area * xy_to_um**2 / Ascale)
+
+        # cell edges
+        cell_interior = morph.erosion(cell_mask, footprint=morph.disk(1))
+        edge = cell_mask ^ cell_interior
+        e_im += edge
+
+    e_im += (A_mean == 0)
+
+    sns.heatmap(A_mean, ax=ax, square=True, cmap=A_cmap, vmin=Amin, vmax=Amax, xticklabels=False, yticklabels=False, cbar=True)
+    sns.heatmap(e_im, ax=ax, cmap=e_cmap,  xticklabels=False, yticklabels=False, cbar=False)
+    ax.set(title=r"$\log{[A_{cell} ~/~ \langle A \rangle_{t, linear}]}$")
+
+    return 0
+
+
+
 def plot_cell_volume(ax, frame, cellprop, Vmin=600, Vmax=8000, xy_to_um=0.15):
     """ 
     Plotting imshow of segmented cell areas with faces colors by the cell volume
@@ -170,19 +213,21 @@ def main():
     parser = argparse.ArgumentParser(description="Usage: python cell_segmentation_Holomonitor.py dir file")
     parser.add_argument("path",          type=str,   help="Path to data folder")
     parser.add_argument("func",          type=str,   help="Plotting function")
-    parser.add_argument("--track_tresh", type=int,   help="first frame of tracked data (corresponds to threshold-1)", default=0)
+    parser.add_argument("-t", "--track_tresh", type=int,   help="first frame of tracked data (corresponds to threshold-1)", default=0)
     parser.add_argument("--fmin",        type=int,   help="First frame to plot", default=0)
     parser.add_argument("--Nframes",     type=int,   help="Number of frames to plot", default=9999)
     parser.add_argument("--figscale",    type=float, help="Scaleing of figure size. Default size is (10,8).", default=1)
     parser.add_argument("--edges",       type=bool,  help="Plot edges", default=False)
-    parser.add_argument("--raw",       action="store_true", help="plotting raw data")
-    parser.add_argument("--corrected", action="store_true", help="plotting corrected data")
-    parser.add_argument("--tracked",   action="store_true", help="plotting tracked data")
-    parser.add_argument("--final",     action="store_true", help="plotting final data")
-    parser.add_argument("-o", "--outdir", type=str, help="Output directory", default="")
+    parser.add_argument("--raw",         action="store_true", help="plotting raw data")
+    parser.add_argument("--corrected",   action="store_true", help="plotting corrected data")
+    parser.add_argument("--tracked",     action="store_true", help="plotting tracked data")
+    parser.add_argument("--final",       action="store_true", help="plotting final data")
+    parser.add_argument("--scale_area",  action="store_true", help="scale area with <A>_glattet")
+    #parser.add_argument("--frames_to_hour", type=float, help="Conversion factor from frames to hours", default=1/12)
+    parser.add_argument("-o", "--outdir",   type=str,   help="Output directory", default="")
     args = parser.parse_args()
 
-    assert args.track_tresh > 0 or args.raw or args.corrected, "must provide fmin"
+    assert args.track_tresh > 0 or args.raw or args.corrected, "must provide track_thres"
 
 
     # Decompose input
@@ -215,7 +260,19 @@ def main():
         im_cell_areas = np.load(f"data/experimental/processed/{dataset}/im_cell_areas_tracked.npy")
 
     else:
-        cellprop = SegmentationData(f"data/experimental/processed/{dataset}/cell_props.p")
+        cellprop      = SegmentationData(f"data/experimental/processed/{dataset}/cell_props.p")
+        im_cell_areas = np.load(f"data/experimental/processed/{dataset}/im_cell_areas_tracked.npy")
+
+
+        if args.scale_area:
+            A_mean_t = np.ma.mean(cellprop.A, axis=1)
+            frames = np.arange(len(A_mean_t)) #* args.frame_to_hour
+            fit = linregress(frames, A_mean_t)
+
+            A_scale = fit.slope*frames + fit.intercept
+
+            cellprop.A /= A_scale[:,np.newaxis]
+
 
 
     # Define path for output
@@ -265,6 +322,12 @@ def main():
         elif args.func == "cell_height":
 
             plot_cell_height(ax, im_cell_areas[frame], cellprop)
+
+
+        elif args.func == "cell_area":
+
+            cellprop = regionprops(im_cell_areas[frame], im)
+            plot_cell_area(ax, im_cell_areas[frame], cellprop, Ascale=A_scale[frame-args.fmin], xy_to_um=pix_to_um[1])
 
 
         elif args.func == "cell_volume":

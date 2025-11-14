@@ -130,7 +130,7 @@ def estimate_cell_bottom_reference(mask, f_crit=0.5):
 def update_cell_mask(mask, z0, z0_plane):
 
     new_mask = np.copy(mask).astype(float)
-    #new_mask[z0] = 1
+    new_mask[z0] = 1
     new_mask[:z0] = 0
     new_mask[z0-1] = z0_plane
     new_mask[z0-2] = (z0_plane-1) * (z0_plane > 1)

@@ -108,7 +108,7 @@ with open(logfile, "a") as log:
             log.write(f"{frame}, z0: {z0}, p_thres: {threshold}\n")
 
             # apply threshold and split 
-            cell_pred  = (cell_prob > 0.5)#threshold)
+            cell_pred  = (cell_prob > threshold)
 
             # filter mask
             cell_mask = median(cell_pred, kernel_1)

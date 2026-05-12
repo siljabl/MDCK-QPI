@@ -4,7 +4,24 @@ import imageio
 import numpy as np
 
 from pathlib import Path
-from experimental_parameters import get_voxel_size_35mm
+from microscope_features import get_voxel_size_35mm
+
+height_path = "../../../../hdd_data/silja/Monolayers/height_fields/"
+ri_path     = "../../../../hdd_data/silja/Monolayers/ri_fields/"
+
+def load_set_of_frames(dataset, frame, microscope):
+
+    if microscope.name == "holomonitor":
+        h_im = imageio.v2.imread(f"{height_path}{dataset}/MDCK-li_reg_zero_corr_fluct_{frame}.tiff") * microscope.h_to_um
+        n_im = np.copy(h_im)
+
+    elif microscope.name == "tomocube":
+        h_im = imageio.v2.imread(f"{height_path}{dataset}/MDCK-li_height_{frame}.tiff")       * microscope.h_to_um
+        n_im = imageio.v2.imread(f"{ri_path}{dataset}/MDCK-li_refractive_index_{frame}.tiff") * microscope.ri_conversion
+
+    return h_im, n_im
+
+
 
 
 def import_holomonitor_stack(dir, h_scaling=4 / 3 * (1 / 100), f_min=1, f_max=180):
@@ -195,7 +212,7 @@ def import_PIV_frame(path, frame):
 
 
 
-def save_label_images(label_arrays, out_dir, fmin, prefix="cell_labels"):
+def save_label_image(label_array, out_dir, fmin, prefix="cell_labels"):
     """
     label_arrays: list of 2D numpy arrays (integer labels)
     out_dir: path-like, directory to save into
@@ -203,11 +220,10 @@ def save_label_images(label_arrays, out_dir, fmin, prefix="cell_labels"):
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    for i, arr in enumerate(label_arrays):
-        arr = np.array(arr, dtype=np.uint16)
-       
-        filename = out_dir / f"{prefix}_{fmin+i}.tiff"
-        imageio.v2.imwrite(filename, arr)
+    arr      = np.array(label_array, dtype=np.uint16)
+    filename = out_dir / f"{prefix}_{fmin}.tiff"
+    imageio.v2.imwrite(filename, arr)
+
 
 
 def save_id_images(label_arrays, tracks_df, out_dir, fmin, prefix="cell_labels"):

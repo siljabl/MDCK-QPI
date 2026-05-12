@@ -34,18 +34,8 @@ label_path  = "../../../../hdd_data/silja/Monolayers/cell_labels/"
 
 parser = argparse.ArgumentParser(description="Usage: python segement_2D_images.py dir microscope")
 parser.add_argument("path",         type=str, help="Path to directory containing data. Typically '~/../../hdd_data/silja/Monolayers/height_fields/<dataset>/'. ")
-parser.add_argument("microscope",   type=str, help="Microscope that where used for data. 'holomonitor' or 'tomocube'.")
 parser.add_argument("--clear_edge", action="store_true",   help="Should be True if monolayer is larger than FOV, otherwise False")
 args = parser.parse_args()
-
-
-
-### SET MICROSCOPE ###
-assert args.microscope == 'holomonitor' or args.microscope == 'tomocube', "Error: do not recognize microscope."
-
-if args.microscope == "holomonitor": microscope = Holomonitor()
-elif args.microscope == "tomocube":  microscope = Tomocube()
-
 
 
 ### LOAD CONFIG ###
@@ -63,6 +53,14 @@ tau  = config['detection']['tau']
 fmin = config['detection']['fmin']
 fmax = config['detection']['fmax']
 Nframes = fmax - fmin + 1
+
+
+
+### SET MICROSCOPE ###
+if config['microscope'] == "holomonitor": microscope = Holomonitor()
+elif config['microscope'] == "tomocube":  microscope = Tomocube()
+
+
 
 
 # Define and create output

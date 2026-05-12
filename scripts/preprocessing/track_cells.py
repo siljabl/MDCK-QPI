@@ -33,24 +33,23 @@ cell_path      = "../../../../hdd_data/silja/Monolayers/cell_features/"
 
 parser = argparse.ArgumentParser(description="Usage: python track_cells.py dir microscope")
 parser.add_argument("path",     type=str,  help="Path to data folder. Typically '../../../../hdd_data/silja/Monolayers/height_fields/<dataset>/'")
-parser.add_argument("microscope",   type=str, help="Microscope that where used for data. 'holomonitor' or 'tomocube'.")
 args = parser.parse_args()
 
 
-
-### SET MICROSCOPE ###
-assert args.microscope == 'holomonitor' or args.microscope == 'tomocube', "Error: do not recognize microscope."
-
-if args.microscope == "holomonitor": microscope = Holomonitor()
-elif args.microscope == "tomocube":  microscope = Tomocube()
 
 
 
 ### LOAD DATA ###
 dataset   = Path(args.path).stem
 config    = json.load(open(f"{config_path}/{dataset}.json"))
+
+if config['microscope'] == "holomonitor": 
+    microscope = Holomonitor()
+elif config['microscope'] == "tomocube":  
+    microscope = Tomocube()
+
 im_areas  = load_label_images(f"{label_path}/{dataset}/corrected")
-im_height = import_stack(f"{height_path}/{dataset}/", config, microscope)
+im_height = load_stack(f"{height_path}/{dataset}/", config, param="height", preprocessing_step="detection")
 
 
 # Compute region props of cells in all frames
@@ -58,7 +57,7 @@ cellprops = [regionprops(im_areas[i], im_height[i]) for i in range(len(im_areas)
 
 
 # Prepare dataframe for tracking
-Fcells = np.concatenate([[frame for cell in cellprops[frame]] for frame in range(len(cellprops))])
+Fcells       = np.concatenate([[frame for cell in cellprops[frame]] for frame in range(len(cellprops))])
 
 Acells       = np.concatenate([[cell.area              for cell in cells] for cells in cellprops])
 hcells       = np.concatenate([[cell.mean_intensity    for cell in cells] for cells in cellprops])

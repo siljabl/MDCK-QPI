@@ -1,0 +1,29 @@
+{
+    "detection": {
+        "fmin":   1, 
+        "fmax":   161, 
+        "s_low":  12, 
+        "s_high": 6, 
+        "tau":    12, 
+        "particle_size": 11
+    },
+    "segmentation": {
+        "xmin": 0, 
+        "xmax": 920, 
+        "ymin": 20, 
+        "ymax": 940, 
+        "s_low": 12, 
+        "s_high": 6
+    }, 
+    "filtering": {
+        "hmin": 2, 
+        "hmax": 18, 
+        "Amin": 150, 
+        "Amax": 2000, 
+        "Vmin": 1000, 
+        "Vmax": 10000, 
+        "track_threshold": 6
+    }, 
+    "final": {
+        "fmin": 6, 
+        "fmax": 156}}

@@ -30,9 +30,10 @@ class Holomonitor:
         self.h_to_um    = 1 / 100
 
         # Tracking parameters
-        self.ascale = 50
+        self.A_scale = 50
         self.memory = 5
-        self.search_range = 20        
+        self.threshold    = 6 
+        self.search_range = 20  # 20 in segment_cells, 10 in track_cells
 
 
 
@@ -48,6 +49,7 @@ class Tomocube:
         self.ri_conversion = 1 / 10_000
 
         # Tracking parameters
-        self.ascale = 150
-        self.memory = 3
+        self.A_scale = 150
+        self.memory = 3     # 3 in segment_cells, 2 in track_cells
+        self.threshold    = 2
         self.search_range = 80    

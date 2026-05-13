@@ -37,12 +37,12 @@ args = parser.parse_args()
 ### LOAD CONFIG ###
 dataset = Path(args.path).stem
 try:
-    with open(f"config/{dataset}.json", 'r') as f:
+    with open(f"configs/{dataset}.json", 'r') as f:
         config = json.load(f)
         config['segmentation']['date'] = datetime.today().strftime('%Y-%m-%d')
-        print(f"Loading configs from config/{dataset}.json")
+        print(f"Loading configs from configs/{dataset}.json")
 except:
-    print(f"Found no config file at config/{dataset}.json")
+    print(f"Found no config file at configs/{dataset}.json")
 
 p0   = config['detection']['particle_size']
 tau  = config['detection']['tau']
@@ -69,11 +69,11 @@ Path(f"{data_path}/cell_labels/raw/{dataset}/").mkdir(parents=True, exist_ok=Tru
 Path(f"{data_path}/cell_labels/corrected/{dataset}/").mkdir(parents=True, exist_ok=True)
 
 
-for f in tqdm(range(fmin, fmax)):
+for f in tqdm(range(fmin, fmax+1)):
 
     # Import frames
-    h_im, n_im = load_set_of_frames(f"{data_path}height_field/raw/{dataset}", f, microscope)
-
+    h_im, n_im = load_set_of_frames(f"{data_path}height_fields/raw/{dataset}", f, microscope)
+    
     # Smoothen field
     n_norm = smoothen_normalize_im(n_im, config['detection']['s_high'], 
                                          config['detection']['s_low'])
@@ -132,7 +132,7 @@ tracks = tp.filter_stubs(tracks, threshold=config['filtering']['track_threshold'
 for f in tqdm(range(fmin, fmax+1)):
 
     # Import frames
-    h_im, n_im = load_set_of_frames(f"{data_path}height_field/raw/{dataset}", f, microscope)
+    h_im, n_im = load_set_of_frames(f"{data_path}height_fields/raw/{dataset}", f, microscope)
 
     # smoothen
     n_norm = smoothen_normalize_im(n_im, config['segmentation']['s_high'], 

@@ -1,0 +1,36 @@
+{
+    "microscope": "holomonitor",
+    "boundary":   "open",
+    
+    "detection": {
+        "s_low":  12, 
+        "s_high": 6, 
+        "tau":    12, 
+        "particle_size": 11
+    },
+    "segmentation": {
+        "xmin": 0, 
+        "xmax": 900, 
+        "ymin": 0, 
+        "ymax": 940, 
+        "s_low": 12, 
+        "s_high": 6
+    }, 
+    "filtering": {
+        "hmin": 3.5, 
+        "hmax": 11, 
+        "Amin": 100, 
+        "Amax": 1550, 
+        "Vmin": 850, 
+        "Vmax": 8500, 
+        "track_threshold": 5
+    }, 
+    "cells": {
+        "fmin": 37, 
+        "fmax": 87
+    },
+    "field": {
+        "fmin": 32, 
+        "fmax": 92
+    }
+}

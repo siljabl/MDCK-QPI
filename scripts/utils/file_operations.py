@@ -21,6 +21,11 @@ def load_set_of_frames(dir, frame, microscope):
         h_im = imageio.v2.imread(f"{dir}/MDCK-li_height_{frame}.tiff")           * microscope.h_to_um
         n_im = imageio.v2.imread(f"{dir}/MDCK-li_refractive_index_{frame}.tiff") * microscope.ri_conversion
 
+    if Path(f"{dir}/mask.tiff"):
+        mask = (imageio.v2.imread(f"{dir}/mask.tiff") > 0)
+        h_im = h_im * mask
+        n_im = n_im * mask
+
     return h_im, n_im
 
     

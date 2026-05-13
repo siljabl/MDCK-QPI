@@ -50,8 +50,8 @@ except:
 
 p0   = config['detection']['particle_size']
 tau  = config['detection']['tau']
-fmin = config['detection']['fmin']
-fmax = config['detection']['fmax']
+fmin = config['field']['fmin']
+fmax = config['field']['fmax']
 Nframes = fmax - fmin + 1
 
 
@@ -69,10 +69,10 @@ Path(f"{label_path}{dataset}/raw/").mkdir(parents=True, exist_ok=True)
 Path(f"{label_path}{dataset}/corrected/").mkdir(parents=True, exist_ok=True)
 
 
-for i in tqdm(range(Nframes)):
+for f in tqdm(range(fmin, fmax)):
 
     # Import frames
-    h_im, n_im = load_set_of_frames(dataset, fmin+i, microscope)
+    h_im, n_im = load_set_of_frames(dataset, f, microscope)
 
     # Smoothen field
     n_norm = smoothen_normalize_im(n_im, config['detection']['s_high'], 
@@ -80,7 +80,7 @@ for i in tqdm(range(Nframes)):
 
     # Find peaks
     # Estimating average particle size from cell doubling time
-    p_size   = np.round(p0 * 2 ** (-i / (2*tau / microscope.frame_to_h)))
+    p_size   = np.round(p0 * 2 ** (-(f-fmin) / (2*tau / microscope.frame_to_h)))
     full_pos = np.array(peak_local_max(n_norm, min_distance=int(p_size)))
 
     # Remove non-confluent areas
@@ -95,7 +95,7 @@ for i in tqdm(range(Nframes)):
     
     # Segment cell areas using watershed
     raw_areas = get_cell_areas(-n_norm, pos, h_im, clear_edge=False)
-    save_label_image(raw_areas, f"{label_path}/{dataset}/raw", fmin=fmin)
+    save_label_image(raw_areas, f"{label_path}/{dataset}/raw", frame=f)
 
     # Get cell properties
     cell_props     = regionprops(raw_areas, h_im)
@@ -113,7 +113,7 @@ for i in tqdm(range(Nframes)):
     tmp_df = pd.DataFrame({'x': pos.T[1][remove_small],
                            'y': pos.T[0][remove_small],
                            'area': cell_areas[remove_small] / microscope.A_scale,
-                           'frame': i * np.ones_like(pos.T[1][remove_small])})
+                           'frame': f * np.ones_like(pos.T[1][remove_small])})
     
     cells_df = pd.concat([cells_df, tmp_df], ignore_index=True)
 
@@ -129,22 +129,22 @@ tracks = tp.filter_stubs(tracks, threshold=config['filtering']['track_threshold'
 
 
 # Redo watershed with filtered positions
-for i in tqdm(range(Nframes)):
+for f in tqdm(range(fmin, fmax+1)):
 
     # Import frames
-    h_im, n_im = load_set_of_frames(dataset, fmin+i, microscope)
+    h_im, n_im = load_set_of_frames(dataset, f, microscope)
 
     # smoothen
     n_norm = smoothen_normalize_im(n_im, config['segmentation']['s_high'], 
                                          config['segmentation']['s_low'])
 
     # get relevant frame from dataframe
-    tracks_tmp = tracks[tracks.frame == i]
+    tracks_tmp = tracks[tracks.frame == f]
     x_cell = tracks_tmp.x.values
     y_cell = tracks_tmp.y.values
 
     pos = np.array([y_cell, x_cell]).T
 
     areas = get_cell_areas(-n_norm, pos, h_im, clear_edge=args.clear_edge)
-    save_label_image(areas, f"{label_path}/{dataset}/corrected", fmin=fmin)
+    save_label_image(areas, f"{label_path}/{dataset}/corrected", frame=f)
 

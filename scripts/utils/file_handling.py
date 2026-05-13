@@ -25,10 +25,10 @@ def load_set_of_frames(dataset, frame, microscope):
 
     
 
-def load_stack(dir, config, param="h", preprocessing_step="final"):
+def load_stack(dir, config, param="h", data_type="field"):
 
-    f_min = config[preprocessing_step]['fmin']
-    f_max = config[preprocessing_step]['fmax']
+    f_min = config[data_type]['fmin']
+    f_max = config[data_type]['fmax']
     
     if config['microscope'] == "holomonitor": 
         microscope = Holomonitor()
@@ -66,7 +66,6 @@ def import_holomonitor_stack(dir, f_min=1, f_max=180):
     
     stack = []
     for f in range(f_min, f_max+1):
-
         try:
             frame = imageio.v2.imread(f"{dir}/MDCK-li_reg_zero_corr_fluct_{f}.tiff")
         except:
@@ -221,7 +220,7 @@ def import_tomocube_stack(dir, f_min=0, f_max=40, param="h"):
 
 
 
-def save_label_image(label_array, out_dir, fmin, prefix="cell_labels"):
+def save_label_image(label_array, out_dir, frame, prefix="cell_labels"):
     """
     label_arrays: list of 2D numpy arrays (integer labels)
     out_dir: path-like, directory to save into
@@ -230,7 +229,8 @@ def save_label_image(label_array, out_dir, fmin, prefix="cell_labels"):
     out_dir.mkdir(parents=True, exist_ok=True)
 
     arr      = np.array(label_array, dtype=np.uint16)
-    filename = out_dir / f"{prefix}_{fmin}.tiff"
+    filename = out_dir / f"{prefix}_{frame:03d}.tiff"
+
     imageio.v2.imwrite(filename, arr)
 
 
@@ -271,7 +271,7 @@ def save_id_images(label_arrays, tracks_df, out_dir, fmin, prefix="cell_labels")
 
         # Save as uint16 (ensure particle IDs fit this range)
         arr_particle = arr_particle.astype(np.uint16)
-        filename = out_dir / f"{prefix}_{frame}.tiff"
+        filename = out_dir / f"{prefix}_{frame:03d}.tiff"
         imageio.v2.imwrite(filename, arr_particle)
 
 

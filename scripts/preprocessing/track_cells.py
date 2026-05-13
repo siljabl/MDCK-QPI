@@ -11,6 +11,7 @@ import argparse
 import numpy as np
 import pandas as pd
 import trackpy as tp
+import matplotlib.pyplot as plt
 
 from pathlib  import Path
 from datetime import datetime
@@ -37,8 +38,6 @@ args = parser.parse_args()
 
 
 
-
-
 ### LOAD DATA ###
 dataset   = Path(args.path).stem
 config    = json.load(open(f"{config_path}/{dataset}.json"))
@@ -49,15 +48,13 @@ elif config['microscope'] == "tomocube":
     microscope = Tomocube()
 
 im_areas  = load_label_images(f"{label_path}/{dataset}/corrected")
-im_height = load_stack(f"{height_path}/{dataset}/", config, param="height", preprocessing_step="detection")
-
+im_height = load_stack(f"{height_path}/{dataset}/", config, param="height", data_type="field")
 
 # Compute region props of cells in all frames
 cellprops = [regionprops(im_areas[i], im_height[i]) for i in range(len(im_areas))]
 
-
 # Prepare dataframe for tracking
-Fcells       = np.concatenate([[frame for cell in cellprops[frame]] for frame in range(len(cellprops))])
+Fcells = np.concatenate([[config['field']['fmin'] + frame for cell in cellprops[frame]] for frame in range(len(cellprops))])
 
 Acells       = np.concatenate([[cell.area              for cell in cells] for cells in cellprops])
 hcells       = np.concatenate([[cell.mean_intensity    for cell in cells] for cells in cellprops])
@@ -66,10 +63,13 @@ amajor       = np.concatenate([[cell.axis_major_length for cell in cells] for ce
 aminor       = np.concatenate([[cell.axis_minor_length for cell in cells] for cells in cellprops])
 orientation  = np.concatenate([[cell.orientation       for cell in cells] for cells in cellprops])
 eccentricity = np.concatenate([[cell.eccentricity      for cell in cells] for cells in cellprops])
-pos_cells    = np.concatenate([[cell.centroid_weighted for cell in cells] for cells in cellprops])
+x_position   = np.concatenate([[cell.centroid_weighted[1] for cell in cells] for cells in cellprops])
+y_position   = np.concatenate([[cell.centroid_weighted[0] for cell in cells] for cells in cellprops])
+print(x_position)
+print(y_position)
 
-cells_df = pd.DataFrame({'x': pos_cells.T[1],
-                         'y': pos_cells.T[0],
+cells_df = pd.DataFrame({'x': x_position,
+                         'y': y_position,
                          'area': Acells / microscope.A_scale,
                          'hmean': hcells,
                          'label': Lcells, 
@@ -81,7 +81,7 @@ cells_df = pd.DataFrame({'x': pos_cells.T[1],
 
 # Add RI for Tomocube
 if microscope.name == "tomocube":
-
+    
     n_mean_arr = []
     for i in range(len(im_areas)):
         ri_field    = imageio.v2.imread(f"{height_path}/{dataset}/MDCK-li_refractive_index_{i}.tiff") * microscope.ri_conversion
@@ -93,22 +93,23 @@ if microscope.name == "tomocube":
 
 
 ### Track cells ###
-tracks = tp.link(cells_df, search_range=microscope.search_range, 
+tracks = tp.link(cells_df, search_range=microscope.track_range, 
                            memory=microscope.memory, 
                            pos_columns=['x', 'y', 'hmean', 'area']);
 
 tracks = tp.filter_stubs(tracks, threshold=microscope.threshold);
 
 # Keep only frames where all cells can have tracks longer than threshold
-fmin = microscope.threshold - 1
-fmax = np.max(tracks.frame) + 1 - fmin
-tracks = tracks[(tracks.frame >= fmin) * (tracks.frame < fmax)]
+fmin = config['cells']['fmin']
+fmax = config['cells']['fmax']
+tracks = tracks[(tracks.frame >= fmin) * (tracks.frame <= fmax)]
 tracks.area *= microscope.A_scale
 
 
 # save as pickle
 data_obj = SegmentationData(f"{cell_path}/{dataset}_cells.p")
 data_obj.transform_df_to_ma(tracks, microscope.pix_to_um)
+data_obj.add("density")
 data_obj.save(f"{cell_path}/{dataset}_cells.p")
 
 
@@ -125,5 +126,5 @@ for i in range(len(im_areas_tracked)):
 
 # Save im_areas
 Path(f"{label_path}{dataset}/tracked/").mkdir(parents=True, exist_ok=True)
-save_id_images(im_areas_tracked, tracks, f"{label_path}/{dataset}/tracked", fmin=fmin)
+save_id_images(im_areas_tracked, tracks, f"{label_path}/{dataset}/tracked", fmin=config['cells']['fmin'])
 

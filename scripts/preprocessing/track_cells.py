@@ -11,17 +11,15 @@ import argparse
 import numpy as np
 import pandas as pd
 import trackpy as tp
-import matplotlib.pyplot as plt
 
 from pathlib  import Path
-from datetime import datetime
 from skimage.measure import regionprops
 
 sys.path.append("scripts/utils/")
-from file_handling import *
-from segmentation_functions import *
-from microscope_features    import Holomonitor, Tomocube
-from data_class import SegmentationData
+from file_operations import *
+from segmentation    import *
+from Microscopes     import Holomonitor, Tomocube
+from SegmentedCells  import SegmentedCells
 
 
 # Paths
@@ -106,11 +104,17 @@ tracks = tracks[(tracks.frame >= fmin) * (tracks.frame <= fmax)]
 tracks.area *= microscope.A_scale
 
 
-# save as pickle
-data_obj = SegmentationData(f"{cell_path}/{dataset}_cells.p")
-data_obj.transform_df_to_ma(tracks, microscope.pix_to_um)
-data_obj.add("density")
-data_obj.save(f"{cell_path}/{dataset}_cells.p")
+# Convert to maskes arrays
+cells = SegmentedCells(f"{cell_path}/{dataset}_cells_.p")
+cells.transform_df_to_ma(tracks, microscope.pix_to_um)
+
+# Filter out based on cell size
+remove_small = (cells.h > config["filtering"]["hmin"]) * (cells.A > config["filtering"]["Amin"]) * (cells.h * cells.A > config["filtering"]["Vmin"])
+remove_large = (cells.h < config["filtering"]["hmax"]) * (cells.A < config["filtering"]["Amax"]) * (cells.h * cells.A < config["filtering"]["Vmax"])
+
+cells.remove_cells(remove_small * remove_large)
+
+cells.save(f"{cell_path}/{dataset}_cells.p")
 
 
 # Create new im_areas with only surviving cells

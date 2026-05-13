@@ -20,9 +20,9 @@ from skimage.measure import regionprops
 from skimage.feature import peak_local_max
 
 sys.path.append("scripts/utils/")
-from file_handling import *
-from segmentation_functions import *
-from microscope_features    import Holomonitor, Tomocube
+from file_operations import *
+from segmentation    import *
+from Microscopes     import Holomonitor, Tomocube
 
 
 # Paths

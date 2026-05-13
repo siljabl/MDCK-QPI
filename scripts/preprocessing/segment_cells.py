@@ -68,8 +68,8 @@ elif config['microscope'] == "tomocube":  microscope = Tomocube()
 
 # Define and create output
 cells_df = pd.DataFrame()
-Path(f"{label_path}{dataset}/raw/").mkdir(parents=True, exist_ok=True)
-Path(f"{label_path}{dataset}/corrected/").mkdir(parents=True, exist_ok=True)
+Path(f"{label_path}raw/{dataset}/").mkdir(parents=True, exist_ok=True)
+Path(f"{label_path}corrected/{dataset}/").mkdir(parents=True, exist_ok=True)
 
 
 for f in tqdm(range(fmin, fmax)):
@@ -98,7 +98,7 @@ for f in tqdm(range(fmin, fmax)):
     
     # Segment cell areas using watershed
     raw_areas = get_cell_areas(-n_norm, pos, h_im, clear_edge=False)
-    save_label_image(raw_areas, f"{label_path}/{dataset}/raw", frame=f)
+    save_label_image(raw_areas, f"{label_path}raw/{dataset}/", frame=f)
 
     # Get cell properties
     cell_props     = regionprops(raw_areas, h_im)
@@ -149,5 +149,5 @@ for f in tqdm(range(fmin, fmax+1)):
     pos = np.array([y_cell, x_cell]).T
 
     areas = get_cell_areas(-n_norm, pos, h_im, clear_edge=clear_edge)
-    save_label_image(areas, f"{label_path}/{dataset}/corrected", frame=f)
+    save_label_image(areas, f"{label_path}corrected/{dataset}/", frame=f)
 

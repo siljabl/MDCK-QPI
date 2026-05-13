@@ -23,12 +23,7 @@ from SegmentedCells  import SegmentedCells
 
 
 # Paths
-config_path    = "configs/"
-height_path    = "../../../../hdd_data/silja/Monolayers/height_fields/"
-ri_path        = "../../../../hdd_data/silja/Monolayers/ri_fields/"
-label_path     = "../../../../hdd_data/silja/Monolayers/cell_labels/"
-cell_path      = "../../../../hdd_data/silja/Monolayers/cell_features/"
-
+data_path    = "../../../../hdd_data/silja/Monolayers/"
 
 parser = argparse.ArgumentParser(description="Usage: python track_cells.py dir microscope")
 parser.add_argument("path",     type=str,  help="Path to data folder. Typically '../../../../hdd_data/silja/Monolayers/height_fields/<dataset>/'")
@@ -38,15 +33,15 @@ args = parser.parse_args()
 
 ### LOAD DATA ###
 dataset   = Path(args.path).stem
-config    = json.load(open(f"{config_path}/{dataset}.json"))
+config    = json.load(open(f"configs/{dataset}.json"))
 
 if config['microscope'] == "holomonitor": 
     microscope = Holomonitor()
 elif config['microscope'] == "tomocube":  
     microscope = Tomocube()
 
-im_areas  = load_label_images(f"{label_path}/{dataset}/corrected")
-im_height = load_stack(f"{height_path}/{dataset}/", config, param="height", data_type="field")
+im_areas  = load_label_images(f"{data_path}cell_labels/corrected/{dataset}/")
+im_height = load_stack(f"{data_path}height_fields/raw/{dataset}/", config, param="height", data_type="field")
 
 # Compute region props of cells in all frames
 cellprops = [regionprops(im_areas[i], im_height[i]) for i in range(len(im_areas))]
@@ -82,7 +77,7 @@ if microscope.name == "tomocube":
     
     n_mean_arr = []
     for i in range(len(im_areas)):
-        ri_field    = imageio.v2.imread(f"{height_path}/{dataset}/MDCK-li_refractive_index_{i}.tiff") * microscope.ri_conversion
+        ri_field    = imageio.v2.imread(f"{data_path}ri_field/raw/{dataset}/MDCK-li_refractive_index_{i}.tiff") * microscope.ri_conversion
         n_cellprops = regionprops(im_areas[i], ri_field)
 
         n_mean_arr.append([cell.mean_intensity for cell in n_cellprops])
@@ -105,7 +100,7 @@ tracks.area *= microscope.A_scale
 
 
 # Convert to maskes arrays
-cells = SegmentedCells(f"{cell_path}/{dataset}_cells_.p")
+cells = SegmentedCells(f"{data_path}cell_features/raw/{dataset}_cells_.p")
 cells.transform_df_to_ma(tracks, microscope.pix_to_um)
 
 # Filter out based on cell size
@@ -114,7 +109,7 @@ remove_large = (cells.h < config["filtering"]["hmax"]) * (cells.A < config["filt
 
 cells.remove_cells(remove_small * remove_large)
 
-cells.save(f"{cell_path}/{dataset}_cells.p")
+cells.save(f"{data_path}cell_features/raw/{dataset}_cells.p")
 
 
 # Create new im_areas with only surviving cells
@@ -129,6 +124,6 @@ for i in range(len(im_areas_tracked)):
         im_areas_tracked[i][mask] = 0
 
 # Save im_areas
-Path(f"{label_path}{dataset}/tracked/").mkdir(parents=True, exist_ok=True)
-save_id_images(im_areas_tracked, tracks, f"{label_path}/{dataset}/tracked", fmin=config['cells']['fmin'])
+Path(f"{data_path}cell_labels/tracked/{dataset}/").mkdir(parents=True, exist_ok=True)
+save_id_images(im_areas_tracked, tracks, f"{data_path}cell_labels/tracked/{dataset}/", fmin=config['cells']['fmin'])
 

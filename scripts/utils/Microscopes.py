@@ -38,6 +38,9 @@ class Holomonitor:
         self.dn0    = 1.38 - 1.34   # Initial RI contrast
         self.hshift = -1            # Correction shift for height fields without reference points
 
+        # Other
+        self.rblur  = 0.75
+
 
 
 class Tomocube:
@@ -60,3 +63,5 @@ class Tomocube:
         # Calibration parameters
         self.n0  = 1.337        # RI of cell medium (DMEM)
 
+        # Other
+        self.rblur  = 0.9

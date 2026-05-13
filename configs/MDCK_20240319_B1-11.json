@@ -1,7 +1,8 @@
 {
+    "microscope": "holomonitor",
+    "boundary":   "open",
+
     "detection": {
-        "fmin":   48, 
-        "fmax":   181, 
         "s_low":  12, 
         "s_high": 6, 
         "tau":    12, 
@@ -24,6 +25,12 @@
         "Vmax": 10000, 
         "track_threshold": 5
     }, 
-    "final": {
+    "cells": {
         "fmin": 53, 
-        "fmax": 176}}
+        "fmax": 176
+    },
+    "field": {
+        "fmin": 48, 
+        "fmax": 181
+    }
+}

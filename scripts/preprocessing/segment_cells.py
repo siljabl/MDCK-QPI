@@ -34,7 +34,6 @@ label_path  = "../../../../hdd_data/silja/Monolayers/cell_labels/"
 
 parser = argparse.ArgumentParser(description="Usage: python segement_2D_images.py dir microscope")
 parser.add_argument("path",         type=str, help="Path to directory containing data. Typically '~/../../hdd_data/silja/Monolayers/height_fields/<dataset>/'. ")
-parser.add_argument("--clear_edge", action="store_true",   help="Should be True if monolayer is larger than FOV, otherwise False")
 args = parser.parse_args()
 
 
@@ -54,6 +53,10 @@ fmin = config['field']['fmin']
 fmax = config['field']['fmax']
 Nframes = fmax - fmin + 1
 
+if config['boundary'] == "open":
+    clear_edge = True
+else:
+    clear_edge = False
 
 
 ### SET MICROSCOPE ###
@@ -145,6 +148,6 @@ for f in tqdm(range(fmin, fmax+1)):
 
     pos = np.array([y_cell, x_cell]).T
 
-    areas = get_cell_areas(-n_norm, pos, h_im, clear_edge=args.clear_edge)
+    areas = get_cell_areas(-n_norm, pos, h_im, clear_edge=clear_edge)
     save_label_image(areas, f"{label_path}/{dataset}/corrected", frame=f)
 

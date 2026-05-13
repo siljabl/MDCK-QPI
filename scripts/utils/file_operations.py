@@ -11,15 +11,15 @@ ri_path     = "../../../../hdd_data/silja/Monolayers/ri_fields/"
 
 
 
-def load_set_of_frames(dataset, frame, microscope):
+def load_set_of_frames(dir, frame, microscope):
 
     if microscope.name == "holomonitor":
-        h_im = imageio.v2.imread(f"{height_path}{dataset}/MDCK-li_reg_zero_corr_fluct_{frame}.tiff") * microscope.h_to_um
+        h_im = imageio.v2.imread(f"{dir}/MDCK-li_reg_zero_corr_fluct_{frame}.tiff") * microscope.h_to_um
         n_im = np.copy(h_im)
 
     elif microscope.name == "tomocube":
-        h_im = imageio.v2.imread(f"{height_path}{dataset}/MDCK-li_height_{frame}.tiff")       * microscope.h_to_um
-        n_im = imageio.v2.imread(f"{ri_path}{dataset}/MDCK-li_refractive_index_{frame}.tiff") * microscope.ri_conversion
+        h_im = imageio.v2.imread(f"{dir}/MDCK-li_height_{frame}.tiff")           * microscope.h_to_um
+        n_im = imageio.v2.imread(f"{dir}/MDCK-li_refractive_index_{frame}.tiff") * microscope.ri_conversion
 
     return h_im, n_im
 

@@ -26,10 +26,7 @@ from Microscopes     import Holomonitor, Tomocube
 
 
 # Paths
-config_path = "configs/"
-height_path = "../../../../hdd_data/silja/Monolayers/height_fields/"
-ri_path     = "../../../../hdd_data/silja/Monolayers/ri_fields/"
-label_path  = "../../../../hdd_data/silja/Monolayers/cell_labels/"
+data_path = "../../../../hdd_data/silja/Monolayers/"
 
 
 parser = argparse.ArgumentParser(description="Usage: python segement_2D_images.py dir microscope")
@@ -40,12 +37,12 @@ args = parser.parse_args()
 ### LOAD CONFIG ###
 dataset = Path(args.path).stem
 try:
-    with open(f"{config_path}{dataset}.json", 'r') as f:
+    with open(f"config/{dataset}.json", 'r') as f:
         config = json.load(f)
         config['segmentation']['date'] = datetime.today().strftime('%Y-%m-%d')
-        print(f"Loading configs from {config_path}{dataset}.json")
+        print(f"Loading configs from config/{dataset}.json")
 except:
-    print(f"Found no config file at {config_path}{dataset}.json")
+    print(f"Found no config file at config/{dataset}.json")
 
 p0   = config['detection']['particle_size']
 tau  = config['detection']['tau']
@@ -68,14 +65,14 @@ elif config['microscope'] == "tomocube":  microscope = Tomocube()
 
 # Define and create output
 cells_df = pd.DataFrame()
-Path(f"{label_path}raw/{dataset}/").mkdir(parents=True, exist_ok=True)
-Path(f"{label_path}corrected/{dataset}/").mkdir(parents=True, exist_ok=True)
+Path(f"{data_path}/cell_labels/raw/{dataset}/").mkdir(parents=True, exist_ok=True)
+Path(f"{data_path}/cell_labels/corrected/{dataset}/").mkdir(parents=True, exist_ok=True)
 
 
 for f in tqdm(range(fmin, fmax)):
 
     # Import frames
-    h_im, n_im = load_set_of_frames(dataset, f, microscope)
+    h_im, n_im = load_set_of_frames(f"{data_path}height_field/raw/{dataset}", f, microscope)
 
     # Smoothen field
     n_norm = smoothen_normalize_im(n_im, config['detection']['s_high'], 
@@ -98,7 +95,7 @@ for f in tqdm(range(fmin, fmax)):
     
     # Segment cell areas using watershed
     raw_areas = get_cell_areas(-n_norm, pos, h_im, clear_edge=False)
-    save_label_image(raw_areas, f"{label_path}raw/{dataset}/", frame=f)
+    save_label_image(raw_areas, f"{data_path}/cell_labels/raw/{dataset}/", frame=f)
 
     # Get cell properties
     cell_props     = regionprops(raw_areas, h_im)
@@ -135,7 +132,7 @@ tracks = tp.filter_stubs(tracks, threshold=config['filtering']['track_threshold'
 for f in tqdm(range(fmin, fmax+1)):
 
     # Import frames
-    h_im, n_im = load_set_of_frames(dataset, f, microscope)
+    h_im, n_im = load_set_of_frames(f"{data_path}height_field/raw/{dataset}", f, microscope)
 
     # smoothen
     n_norm = smoothen_normalize_im(n_im, config['segmentation']['s_high'], 
@@ -149,5 +146,5 @@ for f in tqdm(range(fmin, fmax+1)):
     pos = np.array([y_cell, x_cell]).T
 
     areas = get_cell_areas(-n_norm, pos, h_im, clear_edge=clear_edge)
-    save_label_image(areas, f"{label_path}corrected/{dataset}/", frame=f)
+    save_label_image(areas, f"{data_path}/cell_labels/corrected/{dataset}/", frame=f)
 

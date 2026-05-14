@@ -1,6 +1,7 @@
 # import scipy as sc
 import numpy as np
 import matplotlib.pyplot as plt
+import skimage.morphology as morph
 
 from skimage.filters import gaussian
 from skimage.segmentation import watershed, clear_border
@@ -70,7 +71,7 @@ def get_cell_areas(im, pos, h_im, clear_edge=True):
     cell_areas = areas*cell_mask
 
     # remove small holes and areas
-    #cell_areas = morph.remove_small_holes(cell_areas, area_threshold=100)
+    # cell_areas = morph.remove_small_holes(cell_areas, area_threshold=100)
 
     if clear_edge:
         cell_areas = clear_border(cell_areas)

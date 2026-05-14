@@ -36,13 +36,7 @@ args = parser.parse_args()
 
 ### LOAD CONFIG ###
 dataset = Path(args.path).stem
-try:
-    with open(f"configs/{dataset}.json", 'r') as f:
-        config = json.load(f)
-        config['segmentation']['date'] = datetime.today().strftime('%Y-%m-%d')
-        print(f"Loading configs from configs/{dataset}.json")
-except:
-    print(f"Found no config file at configs/{dataset}.json")
+config  = json.load(open(f"configs/{dataset}.json"))
 
 p0   = config['detection']['particle_size']
 tau  = config['detection']['tau']
@@ -91,7 +85,6 @@ for f in tqdm(range(fmin, fmax+1)):
     if microscope.name == 'tomocube':
         n_norm = smoothen_normalize_im(n_im, config['segmentation']['s_high'],
                                              config['segmentation']['s_low'])
-        # n_norm = smoothen_normalize_im(n_im, 20, 30)
     
     # Segment cell areas using watershed
     raw_areas = get_cell_areas(-n_norm, pos, h_im, clear_edge=False)

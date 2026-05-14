@@ -51,7 +51,8 @@ class Tomocube:
         # Experimental parameters
         self.frame_to_h    = 1 / 4
         self.pix_to_um     = 0.155433
-        self.h_to_um       = 0.8035 / 100
+        self.z_to_um       = 0.8035     
+        self.h_to_um       = 1 / 100
         self.ri_conversion = 1 / 10_000
 
         # Tracking parameters

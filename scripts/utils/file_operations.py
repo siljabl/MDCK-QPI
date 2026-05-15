@@ -35,7 +35,7 @@ def load_stack(dir, config, param="h", data_type="field"):
 
     f_min = config[data_type]['fmin']
     f_max = config[data_type]['fmax']
-    
+
     if config['microscope'] == "holomonitor": 
         microscope = Holomonitor()
         stack = import_holomonitor_stack(dir, f_min, f_max)
@@ -66,9 +66,9 @@ def import_holomonitor_stack(dir, f_min=1, f_max=180):
         mask = (imageio.v2.imread(f"{dir}/mask.tiff") > 0)
     except:
         try:
-            mask = np.ones_like(imageio.v2.imread(f"{dir}/MDCK-li_reg_zero_corr_fluct_{1}.tiff"))
+            mask = np.ones_like(imageio.v2.imread(f"{dir}/MDCK-li_reg_zero_corr_fluct_{f_min}.tiff"))
         except:
-            mask = np.ones_like(imageio.v2.imread(f"{dir}/MDCK-li_reg_zero_corr_{1}.tiff"))
+            mask = np.ones_like(imageio.v2.imread(f"{dir}/MDCK-li_reg_zero_corr_{f_min}.tiff"))
     
     stack = []
     for f in range(f_min, f_max+1):

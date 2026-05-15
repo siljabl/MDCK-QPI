@@ -3,15 +3,15 @@
     "boundary":   "open",
 
     "detection": {
-        "s_low":  12, 
-        "s_high": 6, 
+        "s_low":  14, 
+        "s_high": 7, 
         "tau":    12, 
         "particle_size": 12
     },
     "segmentation": {
         "xmin": 0, 
         "xmax": 940, 
-        "ymin": 20, 
+        "ymin": 0, 
         "ymax": 940, 
         "s_low": 14, 
         "s_high": 7
@@ -24,13 +24,13 @@
         "Vmin": 1000, 
         "Vmax": 10000, 
         "track_threshold": 5
-    }, 
-    "cells": {
-        "fmin": 53, 
-        "fmax": 176
     },
     "field": {
         "fmin": 48, 
         "fmax": 181
+    }, 
+    "cells": {
+        "fmin": 52, 
+        "fmax": 177
     }
 }

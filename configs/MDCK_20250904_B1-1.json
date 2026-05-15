@@ -1,0 +1,36 @@
+{
+    "microscope": "tomocube",
+    "boundary":   "open",
+    
+    "detection": {
+        "s_low":  55, 
+        "s_high": 35, 
+        "tau":    10, 
+        "particle_size": 35
+    },
+    "segmentation": {
+        "xmin": 0, 
+        "xmax": 3648, 
+        "ymin": 0, 
+        "ymax": 3648, 
+        "s_low": 30, 
+        "s_high": 20
+    }, 
+    "filtering": {
+        "hmin": 2, 
+        "hmax": 15, 
+        "Amin": 150, 
+        "Amax": 2500, 
+        "Vmin": 1000, 
+        "Vmax": 16000, 
+        "track_threshold": 2
+    }, 
+    "cells": {
+        "fmin": 1, 
+        "fmax": 39
+    },
+    "field": {
+        "fmin": 0, 
+        "fmax": 40
+    }
+}

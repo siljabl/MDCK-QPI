@@ -10,9 +10,9 @@
     },
     "segmentation": {
         "xmin": 0, 
-        "xmax": 900, 
+        "xmax": 1010, 
         "ymin": 0, 
-        "ymax": 940, 
+        "ymax": 1010, 
         "s_low": 10, 
         "s_high": 6
     }, 
@@ -26,8 +26,8 @@
         "track_threshold": 5
     }, 
     "cells": {
-        "fmin": 6, 
-        "fmax": 99
+        "fmin": 4, 
+        "fmax": 100
     },
     "field": {
         "fmin": 1, 

@@ -35,13 +35,17 @@ elif config['microscope'] == "tomocube":
     microscope = Tomocube()
 
 if microscope.name == "holomonitor":
+
+    cells.h = cells.h + config["calibration"]["hshift"]
+    cells.save(f"{data_path}cell_features/calibrated/{dataset}_cells.p")
+
     # Correct field
     stack = load_stack(f"{data_path}height_fields/raw/{dataset}/", config, param="height", data_type="field")
 
     # Create 
     Path(f"{data_path}height_fields/calibrated/{dataset}/").mkdir(parents=True, exist_ok=True)
 
-    # save data
+    # Save field
     for i in range(len(stack)):
         frame = (stack[i] + config["calibration"]["hshift"]) / microscope.h_to_um
 

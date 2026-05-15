@@ -17,7 +17,6 @@ from skimage.measure import regionprops
 
 sys.path.append("scripts/utils/")
 from file_operations import *
-from segmentation    import *
 from Microscopes     import Holomonitor, Tomocube
 from SegmentedCells  import SegmentedCells
 

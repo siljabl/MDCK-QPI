@@ -34,6 +34,8 @@ if config['microscope'] == "holomonitor":
 elif config['microscope'] == "tomocube":  
     microscope = Tomocube()
 
+
+### 2D QPI ###
 if microscope.name == "holomonitor":
 
     cells.h = cells.h + config["calibration"]["hshift"]
@@ -46,9 +48,18 @@ if microscope.name == "holomonitor":
     Path(f"{data_path}height_fields/calibrated/{dataset}/").mkdir(parents=True, exist_ok=True)
 
     # Save field
-    for i in range(len(stack)):
-        frame = (stack[i] + config["calibration"]["hshift"]) / microscope.h_to_um
+    i = config["field"]["fmin"]
+    for frame in stack:
+        
+        frame_calibrated = (frame + config["calibration"]["hshift"]) / microscope.h_to_um
+        frame_calibrated[frame_calibrated < 0] = 0
+        
+        imageio.imwrite(f"{data_path}height_fields/calibrated/{dataset}/MDCK-li_reg_zero_corr_fluct_{i}.tiff", np.array(frame_calibrated, dtype=np.uint16))
 
-        imageio.imwrite(f"{data_path}height_fields/calibrated/{dataset}/MDCK-li_reg_zero_corr_fluct_{i}.tiff", np.array(frame, dtype=np.uint16))
+        i += 1
 
 
+
+### 3D QPI ###
+if microscope.name == "tomocube":
+    print("not implemeted yet")

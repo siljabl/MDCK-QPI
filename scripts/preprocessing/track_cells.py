@@ -26,7 +26,7 @@ from SegmentedCells  import SegmentedCells
 data_path    = "../../../../hdd_data/silja/Monolayers/"
 
 parser = argparse.ArgumentParser(description="Usage: python track_cells.py dir microscope")
-parser.add_argument("path",     type=str,  help="Path to data folder. Typically '../../../../hdd_data/silja/Monolayers/height_fields/<dataset>/'")
+parser.add_argument("path",     type=str,  help="Path to data folder. Typically 'config/<dataset>/'")
 args = parser.parse_args()
 
 
@@ -58,8 +58,7 @@ orientation  = np.concatenate([[cell.orientation       for cell in cells] for ce
 eccentricity = np.concatenate([[cell.eccentricity      for cell in cells] for cells in cellprops])
 x_position   = np.concatenate([[cell.centroid_weighted[1] for cell in cells] for cells in cellprops])
 y_position   = np.concatenate([[cell.centroid_weighted[0] for cell in cells] for cells in cellprops])
-print(x_position)
-print(y_position)
+
 
 cells_df = pd.DataFrame({'x': x_position,
                          'y': y_position,

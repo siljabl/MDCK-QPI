@@ -30,7 +30,7 @@ data_path = "../../../../hdd_data/silja/Monolayers/"
 
 
 parser = argparse.ArgumentParser(description="Usage: python segement_2D_images.py dir microscope")
-parser.add_argument("path",         type=str, help="Path to directory containing data. Typically '~/../../hdd_data/silja/Monolayers/height_fields/<dataset>/'. ")
+parser.add_argument("path", type=str, help="Path to directory containing data. Typically 'config/<dataset>/'. ")
 args = parser.parse_args()
 
 

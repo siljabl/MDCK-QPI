@@ -24,13 +24,13 @@
         "Vmin": 850, 
         "Vmax": 8500, 
         "track_threshold": 5
-    }, 
-    "cells": {
-        "fmin": 37, 
-        "fmax": 87
     },
     "field": {
         "fmin": 32, 
         "fmax": 92
+    }, 
+    "cells": {
+        "fmin": 36, 
+        "fmax": 88
     }
 }

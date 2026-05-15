@@ -12,25 +12,25 @@
         "xmin": 0, 
         "xmax": 1010, 
         "ymin": 0, 
-        "ymax": 1010,
+        "ymax": 1010, 
         "s_low": 12, 
         "s_high": 6
     }, 
     "filtering": {
-        "hmin": 1, 
+        "hmin": 2, 
         "hmax": 18, 
-        "Amin": 100, 
+        "Amin": 150, 
         "Amax": 2000, 
-        "Vmin": 800, 
+        "Vmin": 1000, 
         "Vmax": 10000, 
         "track_threshold": 5
     },
     "field": {
         "fmin": 1, 
-        "fmax": 104
+        "fmax": 145
     }, 
     "cells": {
         "fmin": 5, 
-        "fmax": 100
+        "fmax": 141
     }
 }

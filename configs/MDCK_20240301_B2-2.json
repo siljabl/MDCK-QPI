@@ -25,6 +25,9 @@
         "Vmax": 8500, 
         "track_threshold": 5
     },
+    "calibration": {
+        "hshift": -1.5
+    },
     "field": {
         "fmin": 32, 
         "fmax": 92

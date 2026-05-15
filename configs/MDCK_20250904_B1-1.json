@@ -25,12 +25,15 @@
         "Vmax": 16000, 
         "track_threshold": 2
     }, 
-    "cells": {
-        "fmin": 1, 
-        "fmax": 39
+    "calibration": {
+        "nshift": 0.002
     },
     "field": {
         "fmin": 0, 
         "fmax": 40
+    },
+    "cells": {
+        "fmin": 1, 
+        "fmax": 39
     }
 }

@@ -60,6 +60,7 @@ class Tomocube:
         self.memory = 3     # 3 in segment_cells, 2 in track_cells
         self.threshold    = 2
         self.search_range = 80
+        self.track_range  = 80
 
         # Calibration parameters
         self.n0  = 1.337        # RI of cell medium (DMEM)

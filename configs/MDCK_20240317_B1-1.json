@@ -23,6 +23,7 @@
         "Amax": 2500, 
         "Vmin": 850, 
         "Vmax": 12000, 
+        "memory": 10,
         "track_threshold": 6
     },
     "calibration": {

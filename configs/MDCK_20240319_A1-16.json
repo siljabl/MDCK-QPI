@@ -19,11 +19,11 @@
     }, 
     "filtering": {
         "hmin": 2, 
-        "hmax": 18, 
-        "Amin": 150, 
-        "Amax": 2000, 
-        "Vmin": 1000, 
-        "Vmax": 10000, 
+        "hmax": 10, 
+        "Amin": 120, 
+        "Amax": 1500, 
+        "Vmin": 600, 
+        "Vmax": 6000, 
         "track_threshold": 6
     },
     "calibration": {

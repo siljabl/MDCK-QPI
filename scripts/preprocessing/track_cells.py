@@ -76,7 +76,8 @@ if microscope.name == "tomocube":
     
     n_mean_arr = []
     for i in range(len(im_areas)):
-        ri_field    = imageio.v2.imread(f"{data_path}ri_field/raw/{dataset}/MDCK-li_refractive_index_{i}.tiff") * microscope.ri_conversion
+
+        ri_field    = imageio.v2.imread(f"{data_path}ri_fields/raw/{dataset}/MDCK-li_refractive_index_{i}.tiff") * microscope.ri_conversion
         n_cellprops = regionprops(im_areas[i], ri_field)
 
         n_mean_arr.append([cell.mean_intensity for cell in n_cellprops])

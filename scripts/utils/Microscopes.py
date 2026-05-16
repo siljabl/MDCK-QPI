@@ -35,7 +35,8 @@ class Holomonitor:
         self.track_range  = 10      # 20 in segment_cells, 10 in track_cells
 
         # Calibration parameters
-        self.dn0    = 1.38 - 1.34   # Initial RI contrast
+        self.dn0 = 1.38 - 1.34   # Initial RI contrast
+        self.a   = np.array([2.12015269e-02,  1.23314604e-06, -1.54442945e-11])   
 
         # Other
         self.rblur  = 0.75

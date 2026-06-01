@@ -4,11 +4,49 @@ import scipy as sc
 from scipy.signal import butter, filtfilt
 
 
-def replace_nan(areas, mask):
-    ''' Used to prepare masked arrays for filtering '''
-    for cell in range(len(areas[0])):
-        areas[:,cell][mask[:,cell]] = np.interp(np.flatnonzero(mask[:,cell]), np.flatnonzero(~mask[:,cell]), areas[:,cell][~mask[:,cell]])
+# def replace_nan(areas, mask):
+#     ''' Used to prepare masked arrays for filtering '''
+#     for cell in range(len(areas[0])):
+#         areas[:,cell][mask[:,cell]] = np.interp(np.flatnonzero(mask[:,cell]), np.flatnonzero(~mask[:,cell]), areas[:,cell][~mask[:,cell]])
     
+#     return areas
+
+def replace_nan(areas, mask):
+    """Used to prepare masked arrays for filtering.
+
+    areas: 2D array, shape (T, N)
+    mask:  2D boolean array of same shape, True = needs filling
+    """
+    areas = np.asarray(areas).copy()
+    mask = np.asarray(mask)
+
+    n_cells = areas.shape[1]
+
+    for cell in range(n_cells):
+        col_mask = mask[:, cell]
+        col = areas[:, cell]
+
+        missing_idx = np.flatnonzero(col_mask)
+        if missing_idx.size == 0:
+            # nothing to fill in this column
+            continue
+
+        known_idx = np.flatnonzero(~col_mask)
+        if known_idx.size == 0:
+            # all values are masked; decide what to do
+            # example: set to 0 or leave as is
+            # here: leave them unchanged (or set to np.nan if you prefer)
+            # areas[missing_idx, cell] = np.nan
+            continue
+
+        # If only one known point, interpolation is formally allowed but gives a flat line
+        # If that’s okay, you can keep this; otherwise add a second check.
+        areas[missing_idx, cell] = np.interp(
+            missing_idx,
+            known_idx,
+            col[known_idx]
+        )
+
     return areas
 
 

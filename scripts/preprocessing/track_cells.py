@@ -43,20 +43,20 @@ im_areas  = load_label_images(f"{data_path}cell_labels/corrected/{dataset}/")
 im_height = load_stack(f"{data_path}height_fields/raw/{dataset}/", config, param="height", data_type="field")
 
 # Compute region props of cells in all frames
-cellprops = [regionprops(im_areas[i], im_height[i]) for i in range(len(im_areas))]
+cells = [regionprops(im_areas[i], im_height[i]) for i in range(len(im_areas))]
 
 # Prepare dataframe for tracking
-Fcells = np.concatenate([[config['field']['fmin'] + frame for cell in cellprops[frame]] for frame in range(len(cellprops))])
+Fcells = np.concatenate([[config['field']['fmin'] + frame for cell in cells[frame]] for frame in range(len(cells))])
 
-Acells       = np.concatenate([[cell.area              for cell in cells] for cells in cellprops])
-hcells       = np.concatenate([[cell.mean_intensity    for cell in cells] for cells in cellprops])
-Lcells       = np.concatenate([[cell.label             for cell in cells] for cells in cellprops])
-amajor       = np.concatenate([[cell.axis_major_length for cell in cells] for cells in cellprops])
-aminor       = np.concatenate([[cell.axis_minor_length for cell in cells] for cells in cellprops])
-orientation  = np.concatenate([[cell.orientation       for cell in cells] for cells in cellprops])
-eccentricity = np.concatenate([[cell.eccentricity      for cell in cells] for cells in cellprops])
-x_position   = np.concatenate([[cell.centroid_weighted[1] for cell in cells] for cells in cellprops])
-y_position   = np.concatenate([[cell.centroid_weighted[0] for cell in cells] for cells in cellprops])
+Acells       = np.concatenate([[cell.area              for cell in cells] for cells in cells])
+hcells       = np.concatenate([[cell.mean_intensity    for cell in cells] for cells in cells])
+Lcells       = np.concatenate([[cell.label             for cell in cells] for cells in cells])
+amajor       = np.concatenate([[cell.axis_major_length for cell in cells] for cells in cells])
+aminor       = np.concatenate([[cell.axis_minor_length for cell in cells] for cells in cells])
+orientation  = np.concatenate([[cell.orientation       for cell in cells] for cells in cells])
+eccentricity = np.concatenate([[cell.eccentricity      for cell in cells] for cells in cells])
+x_position   = np.concatenate([[cell.centroid_weighted[1] for cell in cells] for cells in cells])
+y_position   = np.concatenate([[cell.centroid_weighted[0] for cell in cells] for cells in cells])
 
 
 cells_df = pd.DataFrame({'x': x_position,
@@ -86,11 +86,10 @@ if microscope.name == "tomocube":
 
 ### Track cells ###
 tracks = tp.link(cells_df, search_range=microscope.track_range, 
-                           memory=microscope.memory, 
+                           memory=microscope.track_memory, 
                            pos_columns=['x', 'y', 'hmean', 'area']);
 
-tracks = tp.filter_stubs(tracks, threshold=microscope.threshold);
-
+tracks = tp.filter_stubs(tracks, threshold=microscope.threshold-1);
 # Keep only frames where all cells can have tracks longer than threshold
 fmin = config['cells']['fmin']
 fmax = config['cells']['fmax']

@@ -29,14 +29,15 @@ class Holomonitor:
 
         # Tracking parameters
         self.A_scale = 50
-        self.memory = 5
+        self.segment_memory = 5
+        self.track_memory = 5
         self.threshold    = 6 
         self.search_range = 20      # 20 in segment_cells, 10 in track_cells
-        self.track_range  = 10      # 20 in segment_cells, 10 in track_cells
+        self.track_range  = 20      # 20 in segment_cells, 10 in track_cells
 
         # Calibration parameters
         self.dn0 = 1.38 - 1.34   # Initial RI contrast
-        self.a   = np.array([2.12015269e-02,  1.23314604e-06, -1.54442945e-11])   
+        self.a   = np.array([2.15764739e-02, 1.17349007e-06, 1.71003056e-12])   
 
         # Other
         self.rblur  = 0.75
@@ -57,7 +58,8 @@ class Tomocube:
 
         # Tracking parameters
         self.A_scale = 150
-        self.memory = 3     # 3 in segment_cells, 2 in track_cells
+        self.segment_memory = 3    # 3 in segment_cells, 2 in track_cells
+        self.track_memory = 2      # 3 in segment_cells, 2 in track_cells
         self.threshold    = 2
         self.search_range = 80
         self.track_range  = 80

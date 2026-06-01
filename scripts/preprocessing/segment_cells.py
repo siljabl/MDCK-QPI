@@ -74,12 +74,8 @@ for f in tqdm(range(fmin, fmax+1)):
 
     # Find peaks
     # Estimating average particle size from cell doubling time
-    p_size   = np.round(p0 * 2 ** (-(f-fmin) / (2*tau / microscope.frame_to_h)))
-    full_pos = np.array(peak_local_max(n_norm, min_distance=int(p_size)))
-
-    # Remove non-confluent areas
-    pos = full_pos[(full_pos[:,1] > config['segmentation']['xmin']) * (full_pos[:,1] < config['segmentation']['xmax'])]
-    pos =      pos[(     pos[:,0] > config['segmentation']['ymin']) * (     pos[:,0] < config['segmentation']['ymax'])]
+    p_size = np.round(p0 * 2 ** (-(f-fmin) / (2*tau / microscope.frame_to_h)))
+    pos    = np.array(peak_local_max(n_norm, min_distance=int(p_size)))
 
     # Smoothen again
     if microscope.name == 'tomocube':
@@ -102,10 +98,12 @@ for f in tqdm(range(fmin, fmax+1)):
     remove_small *= (cell_areas   > config['filtering']['Amin'] / microscope.pix_to_um**2) 
     remove_small *= (cell_volumes > config['filtering']['Vmin'] / microscope.pix_to_um**2)
 
+    areas = get_cell_areas(-n_norm, pos[remove_small], h_im, clear_edge=clear_edge)
+    #save_label_image(areas, f"{data_path}/cell_labels/corrected/{dataset}/", frame=f)
+
     # Save as temporary data frame
     tmp_df = pd.DataFrame({'x': pos.T[1][remove_small],
                            'y': pos.T[0][remove_small],
-                           'area': cell_areas[remove_small] / microscope.A_scale,
                            'frame': f * np.ones_like(pos.T[1][remove_small])})
     
     cells_df = pd.concat([cells_df, tmp_df], ignore_index=True)
@@ -114,8 +112,8 @@ for f in tqdm(range(fmin, fmax+1)):
 
 # Remove short lived detections
 tracks = tp.link(cells_df, search_range=microscope.search_range, 
-                           memory=microscope.memory, 
-                           pos_columns=['x', 'y', 'area']);
+                           memory=microscope.segment_memory, 
+                           pos_columns=['x', 'y']);
 
 tracks = tp.filter_stubs(tracks, threshold=config['filtering']['track_threshold']);
 
@@ -137,6 +135,11 @@ for f in tqdm(range(fmin, fmax+1)):
     y_cell = tracks_tmp.y.values
 
     pos = np.array([y_cell, x_cell]).T
+
+    # Remove non-confluent areas
+    #pos = full_pos[(full_pos[:,1] > config['segmentation']['xmin']) * (full_pos[:,1] < config['segmentation']['xmax'])]
+    #pos =      pos[(     pos[:,0] > config['segmentation']['ymin']) * (     pos[:,0] < config['segmentation']['ymax'])]
+
 
     areas = get_cell_areas(-n_norm, pos, h_im, clear_edge=clear_edge)
     save_label_image(areas, f"{data_path}/cell_labels/corrected/{dataset}/", frame=f)

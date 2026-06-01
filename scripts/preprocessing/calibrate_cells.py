@@ -43,7 +43,8 @@ elif config['microscope'] == "tomocube":
 if microscope.name == "holomonitor":
 
     # calibrate cell features
-    cells.h = cells.h + config["calibration"]["hshift"]
+    dn = poly2(microscope.a, cells.density)
+    cells.h = (cells.h + config["calibration"]["hshift"]) * (microscope.dn0 / dn)[:,np.newaxis]
     cells.save(f"{data_path}cell_features/calibrated/{dataset}_cells.p")
 
     N = config["field"]["fmax"] + 1 - config["field"]["fmin"]

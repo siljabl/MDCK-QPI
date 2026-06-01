@@ -46,6 +46,7 @@ def scalar_temporal_correlation(var1, var2, Nframes, t_max=None):
                             C_norm[i,j-i] = np.ma.mean(var1_i * var2_j) / rms
                             N[i,j] = np.min([Noki, Nokj])
                         
+                        
                             delta_f[i,j] = j-i
 
     return C_norm[:,:t_max], N[:,:t_max], delta_f[:,:t_max]

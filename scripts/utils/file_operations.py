@@ -132,32 +132,32 @@ def import_tomocube_stack(dir, f_min=0, f_max=40, param="h"):
 
 
 
-# def import_txt_with_NaN(input_file, header_rows=3):
-#     with open(input_file, 'r') as file:
+def import_txt_with_NaN(input_file, header_rows=3):
+    with open(input_file, 'r') as file:
 
-#         # Skip the first three lines
-#         for _ in range(header_rows):
-#             next(file)
+        # Skip the first three lines
+        for _ in range(header_rows):
+            next(file)
         
-#         # Read the remaining lines and replace 'NaN'
-#         output_file = []
+        # Read the remaining lines and replace 'NaN'
+        output_file = []
 
-#         # Process the remaining rows
-#         for line in file:
-#             # Split the line into values (assuming a whitespace delimiter)
-#             values = line.strip().split(",")
+        # Process the remaining rows
+        for line in file:
+            # Split the line into values (assuming a whitespace delimiter)
+            values = line.strip().split(",")
 
-#             # Replace "NaN" with the specified replacement value and convert to float
-#             processed_row = [
-#                 float(value) if value != "NaN" else 9999.0
-#                 for value in values
-#             ]
-#             output_file.append(processed_row)
+            # Replace "NaN" with the specified replacement value and convert to float
+            processed_row = [
+                float(value) if value != "NaN" else 9999.0
+                for value in values
+            ]
+            output_file.append(processed_row)
     
-#     output_file = np.array(output_file)
-#     output_file = np.ma.array(output_file, mask=output_file==9999.0)
+    output_file = np.array(output_file)
+    output_file = np.ma.array(output_file, mask=output_file==9999.0)
 
-#     return output_file
+    return output_file
 
 
 
@@ -211,18 +211,18 @@ def import_tomocube_stack(dir, f_min=0, f_max=40, param="h"):
 
 
 
-# def import_PIV_frame(path, frame):
+def import_PIV_frame(path, frame):
 
-#     # import PIV velocity field
-#     data_PIV = import_txt_with_NaN(f"{path}/PIVlab_{frame+1:04d}.txt", header_rows=3)
+    # import PIV velocity field
+    data_PIV = import_txt_with_NaN(f"{path}/PIVlab_{frame+1:04d}.txt", header_rows=3)
 
-#     # Extract values
-#     x = np.ma.array(data_PIV[:, 0], dtype=int)
-#     y = np.ma.array(data_PIV[:, 1], dtype=int)
-#     u = np.ma.array(data_PIV[:, 2], dtype=np.float64)
-#     v = np.ma.array(data_PIV[:, 3], dtype=np.float64)
+    # Extract values
+    x = np.ma.array(data_PIV[:, 0], dtype=int)
+    y = np.ma.array(data_PIV[:, 1], dtype=int)
+    u = np.ma.array(data_PIV[:, 2], dtype=np.float64)
+    v = np.ma.array(data_PIV[:, 3], dtype=np.float64)
 
-#     return [x,y], [u,v]
+    return [x,y], [u,v]
 
 
 

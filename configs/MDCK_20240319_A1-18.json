@@ -26,7 +26,7 @@
         "track_threshold": 6
     },
     "calibration": {
-        "hshift": -0.8
+        "hshift": -0.64
     },
     "field": {
         "fmin": 131, 

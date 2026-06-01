@@ -22,11 +22,11 @@
         "Amin": 150, 
         "Amax": 3000, 
         "Vmin": 1000, 
-        "Vmax": 12500, 
+        "Vmax": 8000, 
         "track_threshold": 2
     }, 
     "calibration": {
-        "nshift": 0.01922141
+        "nshift": 0.01952676
     },
     "field": {
         "fmin": 0, 

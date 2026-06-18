@@ -19,11 +19,12 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import skimage.morphology as morph
 from skimage.measure import regionprops
+from matplotlib_scalebar.scalebar import ScaleBar
+
 
 from tqdm import tqdm
 from pathlib import Path
-# from scipy.stats import linregress
-# from matplotlib_scalebar.scalebar import ScaleBar
+from cmcrameri import cm
 
 sys.path.append("scripts/utils")
 from file_operations import *
@@ -49,12 +50,13 @@ cmap_yketa = (                                                               # c
 norm_area = Normalize(0, 10)                                                # interval of value represented by colourmap
 scalarMap_yketa = ScalarMappable(norm_area, cmap_yketa)
 
+VMAX = 14
 
 ######################
 # Plotting functions #
 ######################
 
-def plot_cell_detection(ax, frame, pos, vmin=0, vmax=20, label='h (µm)'):
+def plot_cell_detection(ax, frame, pos, vmin=0, vmax=VMAX, label='h (µm)'):
     """ 
     Plotting raw tiff with detected cell centers on top
 
@@ -72,6 +74,49 @@ def plot_cell_detection(ax, frame, pos, vmin=0, vmax=20, label='h (µm)'):
     ax.plot(pos[0].T, pos[1].T, 'r.', ms=5)
     # ax.set(title=f"#cells: {len(pos[0])}")
     #ax.set(title=f"#cells: {np.sum(pos[0].mask==False)}")
+
+
+
+def plot_height_field(ax, frame, time, microscope, vmin=0, vmax=VMAX):
+    
+    sns.set_theme(style='ticks', palette='bright', font_scale=4)
+    sns.heatmap(frame, square=True, cmap=cm.batlowW, xticklabels=False, yticklabels=False, vmin=vmin, vmax=vmax)
+
+    sb = ScaleBar(microscope.pix_to_um, 'um', box_alpha=0, color="w", height_fraction=2e-2, scale_loc="none", fixed_value=100)
+    sb.location = 'lower left'
+    ax.add_artist(sb)
+    ax.set(title=rf"h(x,y) µm,    t = {time * microscope.frame_to_h:0.2f} h")
+
+
+
+def plot_ri_field(ax, frame, time, microscope, vmin=1.33, vmax=1.43):
+    
+    sns.set_theme(style='ticks', palette='bright', font_scale=4)
+    sns.heatmap(frame, square=True, cmap="rocket", xticklabels=False, yticklabels=False, vmin=vmin, vmax=vmax)
+
+    sb = ScaleBar(microscope.pix_to_um, 'um', box_alpha=0, color="w", height_fraction=2e-2, scale_loc="none", fixed_value=100)
+    sb.location = 'lower left'
+    ax.add_artist(sb)
+    ax.set(title=rf"n(x,y),    t = {time * microscope.frame_to_h:0.2f} h")
+
+
+
+def plot_3D_height(ax, X, Y, Z, vmin=0, vmax=VMAX):
+
+    ax.set(zlim=(0,9))
+    ax.set_zticks([])
+
+    ax.plot_surface(X, 
+                    Y, 
+                    Z,
+                    rstride=10,
+                    cstride=10,
+                    antialiased=True,
+                    linewidth=0, 
+                    cmap=cm.batlowW,
+                    vmin=vmin,
+                    vmax=vmax)
+
 
 
 
@@ -329,18 +374,6 @@ def main():
 
 
     cells = SegmentedCells(f"{data_path}cell_features/calibrated/{dataset}_cells.p")
-    #im_cell_areas = np.load(f"data/experimental/processed/{dataset}/im_cell_areas_tracked.npy")
-
-
-        # if args.scale_area:
-        #     A_cell_t = np.ma.mean(cellprop.A, axis=1)
-        #     frames = np.arange(len(A_cell_t)) #* args.frame_to_hour
-        #     fit = linregress(frames, A_cell_t)
-
-        #     A_scale = fit.slope*frames + fit.intercept
-
-        #     cellprop.A /= A_scale[:,np.newaxis]
-
 
 
     # set value range
@@ -354,20 +387,51 @@ def main():
 
     # loop through frames
     for frame in tqdm(range(config['cells']['fmin'],
-                            config['cells']['fmin'])):
+                            config['cells']['fmax'])):
         f_idx = frame - config['cells']['fmin']
         # Import raw image
         h_im, n_im = load_set_of_frames(f"{data_path}height_fields/calibrated/{dataset}", frame, microscope)
 
-        
 
         # plot
-        fig, ax = plt.subplots(1,1, figsize=(10*args.figscale, 8*args.figscale))
+        if args.func != "3D":
+            fig, ax = plt.subplots(1,1, figsize=(10*args.figscale, 8*args.figscale))
 
         if args.func == "cell_detection":
-
             positions = np.array([cells.x[f_idx] / microscope.pix_to_um, cells.y[f_idx] / microscope.pix_to_um])
             plot_cell_detection(ax, n_im, positions, vmin=vmin, vmax=vmax)
+
+
+        if args.func == "height_field":
+            plot_height_field(ax, h_im, frame, microscope, vmax=VMAX)
+
+
+        if args.func == "ri_field":
+            plot_ri_field(ax, n_im, frame, microscope, vmin=1.34, vmax=1.40)
+
+
+        if args.func == "3D":
+            font  = {'size': 24}
+            mpl.rc('font', **font)
+            fig, ax = plt.subplots(figsize=(32,18), subplot_kw={"projection": "3d"})
+            Z    = h_im
+            X, Y = np.meshgrid(np.arange(3648) * microscope.pix_to_um,
+                               np.arange(3648) * microscope.pix_to_um)
+
+            ax.set_box_aspect(((np.ptp(X)), (np.ptp(Y)), 9))
+            plot_3D_height(ax, X, Y, Z)
+
+            ax.set_xlabel(r"$x~(µm)$", fontsize=24, labelpad=50)
+            ax.set_ylabel(r"$y~(µm)$", fontsize=24, labelpad=50)
+            
+            m = mpl.cm.ScalarMappable(cmap=cm.batlowW)
+            m.set_array(np.linspace(0, 8, 100))
+
+            cbar_ax = fig.add_axes([0.95, 0.15, 0.02, 0.7])
+            cbar = fig.colorbar(m, cax=cbar_ax)
+            cbar.set_label(label=r"$h ~(µm)$", fontsize=28)
+            fig.subplots_adjust(left=-0.25, right=1.2, top=1.25, bottom=-0.25)
+
 
 
         # elif args.func == "cell_height":
@@ -395,35 +459,9 @@ def main():
         else:
             print("Error: func not recognized.")
 
-        # cbar_volume = fig.colorbar(
-        #     mappable=scalarMap_yketa, ax=ax,
-        #     shrink=0.75, pad=0.01)
 
-
-
-        # # add scalebar
-        # if args.func == "movie":
-        #     for axs in ax.flatten():
-        #         sb = ScaleBar(pix_to_um[-1], 'um', box_alpha=0, color="w", height_fraction=2e-2, scale_loc="none", fixed_value=100)
-        #         sb.location = 'lower left'
-        #         axs.add_artist(sb)
-
-        # else:
-        #     sb = ScaleBar(pix_to_um[-1], 'um', box_alpha=0, color="w", height_fraction=2e-2, scale_loc="none", fixed_value=100)
-        #     sb.location = 'lower left'
-        #     ax.add_artist(sb)
-
-        # save
-        # if args.raw:
-        #     sufix = "_raw"
-        # elif args.corrected:
-        #     sufix = "_corrected"
-        # elif args.tracked:
-        #     sufix = "_tracked"
-        # else:
-        #     sufix = ""
         fig.tight_layout()
-        plt.savefig(f"results/tmp/frame_{frame}.png", dpi=300);
+        plt.savefig(f"figs/frames/frame_{frame}.png", dpi=300);
         plt.close()
 
 

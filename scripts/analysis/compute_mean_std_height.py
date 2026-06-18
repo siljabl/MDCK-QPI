@@ -23,7 +23,7 @@ parser.add_argument("path", type=str, help="Path to dataset, as config/dataset")
 parser.add_argument("-t", "--type", type=str, help="Measure type, pixel or disc", default="pixel")
 args = parser.parse_args()
 
-Path(f"data/mean_evolutions/").mkdir(parents=True, exist_ok=True)
+Path(f"results/mean_evolutions/").mkdir(parents=True, exist_ok=True)
 
 ###############
 # Import data #
@@ -74,13 +74,13 @@ if args.type == "disc":
     h_mean = np.ma.mean(h_disc, axis=(1,2), keepdims=False)
     h_std  = np.ma.std(h_disc,  axis=(1,2), keepdims=False)
 
-    np.save(f"data/mean_evolutions/{dataset}_h_disc_mean", h_mean.data) 
-    np.save(f"data/mean_evolutions/{dataset}_h_disc_std",  h_std.data) 
+    np.save(f"results/mean_evolutions/{dataset}_h_disc_mean", h_mean.data) 
+    np.save(f"results/mean_evolutions/{dataset}_h_disc_std",  h_std.data) 
 
 elif args.type == "pixel":
     h_mean = np.ma.mean(h_pix, axis=(1,2), keepdims=False)
     h_std  = np.ma.std(h_pix,  axis=(1,2), keepdims=False)
 
-    np.save(f"data/mean_evolutions/{dataset}_h_pixel_mean", h_mean.data) 
-    np.save(f"data/mean_evolutions/{dataset}_h_pixel_std",  h_std.data) 
+    np.save(f"results/mean_evolutions/{dataset}_h_pixel_mean", h_mean.data) 
+    np.save(f"results/mean_evolutions/{dataset}_h_pixel_std",  h_std.data) 
 

@@ -78,12 +78,6 @@ class Autocorrelations:
 
 
 
-    def add_density(self, masked_areas):
-        self.density = global_density(masked_areas)
-        self.save()
-
-
-
     def compute_spatial(self, positions, variable, variable_name, dr, r_max, t_avrg=False, overwrite=False):
         """ Computes spatial autocorrelation """
 
@@ -101,9 +95,11 @@ class Autocorrelations:
                                                  dr=dr, r_max=r_max, t_avrg=t_avrg)
 
         # Update object
-        self.spatial[variable_name]  = Cr['C_norm']#.compressed()
-        self.r_array[variable_name]  = Cr['r_bin_centers']#.compressed()
+        C0 = np.ma.ones((len(Cr['C_norm']), 1))          # masked array with data=1, mask=False
+        self.spatial[variable_name]  = np.ma.concatenate([C0, Cr['C_norm']], axis=1)
+        self.r_array[variable_name]  = np.concatenate([[0], Cr['r_bin_centers']])
         self.log['r'][variable_name] = datetime.today().strftime('%Y/%m/%d_%H:%M')
+
 
 
 
@@ -129,7 +125,7 @@ class Autocorrelations:
         Ct = compute.general_temporal_correlation(variable, t_max=t_max, t_avrg=t_avrg)
 
         # Update object
-        self.t_array[variable_name]  = np.arange(t_max)
+        self.t_array[variable_name]  = np.arange(len(Ct['C_norm']))
 
         if mean_var == 'r':
             self.temporal[variable_name] = Ct['C_norm']
@@ -142,9 +138,8 @@ class Autocorrelations:
 
             self.temporal_cell[variable_name] = Ct['C_norm']
             self.log['t_cell'][variable_name] = datetime.today().strftime('%Y/%m/%d_%H:%M')
-
-
     
+
     def bin_data(self, variable, parameter, bin_size=200, update_obj=False):
         
         # Assertions to ensure correct data exists
@@ -224,8 +219,7 @@ class Autocorrelations:
 
                 elif variable == "t_cell":
                     self.temporal[parameter] = output['mean']
-
-
+                    
 
             return output
         

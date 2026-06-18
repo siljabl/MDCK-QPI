@@ -238,10 +238,10 @@ def scalar_spatial_correlation_loopv2(xf, yf, var1f, var2f, r_bin_edges):
             #Radial distances to the vectors
             rf_rel = np.sqrt( xf_rel**2 + yf_rel**2)
     
-            if i==0:
-                bool_in_bin = rf_rel==0
-            else:
-                bool_in_bin = (rf_rel> r_bin_edges[i] ) * (rf_rel<= r_bin_edges[i+1] )
+            # if i==0:
+            #     bool_in_bin = rf_rel==0
+            # else:
+            bool_in_bin = (rf_rel> r_bin_edges[i] ) * (rf_rel<= r_bin_edges[i+1] )
     
     
             if np.any(bool_in_bin):
@@ -266,8 +266,9 @@ def scalar_spatial_correlation(x, y, var1, var2, dr, r_max, Nmax=5000, every_n_f
     Nframes = x.shape[0]
     
     #Add a point at zero
-    r_bin_edges   = np.concatenate( ( [0],np.arange(0, r_max, dr) ) )
+    r_bin_edges   = np.arange(0, r_max, dr) #np.concatenate(([0], np.arange(50, r_max, dr)))
     r_bin_centers = (r_bin_edges[1:] + r_bin_edges[:-1])/2
+    #r_bin_edges[0]= 20
 
     Nbins     = len(r_bin_centers)
     C_norm    = np.ma.masked_array(np.zeros(shape = (Nframes, Nbins)), True)
@@ -341,10 +342,10 @@ def scalar_vector_spatial_correlation_loopv2(xf, yf, var1f, vec2f, r_bin_edges):
             #Radial distances to the vectors
             rf_rel = np.sqrt( xf_rel**2 + yf_rel**2)
     
-            if i==0:
-                bool_in_bin = rf_rel==0
-            else:
-                bool_in_bin = (rf_rel> r_bin_edges[i] ) * (rf_rel<= r_bin_edges[i+1] )
+            # if i==0:
+            #     bool_in_bin = rf_rel==0
+            # else:
+            bool_in_bin = (rf_rel> r_bin_edges[i] ) * (rf_rel<= r_bin_edges[i+1] )
     
     
             if np.any(bool_in_bin):
@@ -371,7 +372,7 @@ def scalar_vector_spatial_correlation(x, y, var1, vec2, dr, r_max, Nmax=5000, ev
     Nframes = x.shape[0]
     
     #Add a point at zero
-    r_bin_edges   = np.concatenate( ( [0],np.arange(0, r_max, dr) ) )
+    r_bin_edges   = np.arange(0, r_max, dr) #np.concatenate(([0], np.arange(50, r_max, dr)))
     r_bin_centers = (r_bin_edges[1:] + r_bin_edges[:-1])/2
 
     Nbins     = len(r_bin_centers)
@@ -449,10 +450,10 @@ def vector_spatial_correlation_loopv2(xf, yf, vec1f, vec2f, r_bin_edges):
             #Radial distances to the vectors
             rf_rel = np.sqrt( xf_rel**2 + yf_rel**2)
     
-            if i==0:
-                bool_in_bin = rf_rel==0
-            else:
-                bool_in_bin = (rf_rel> r_bin_edges[i] ) * (rf_rel<= r_bin_edges[i+1] )
+            # if i==0:
+            #     bool_in_bin = rf_rel==0
+            # else:
+            bool_in_bin = (rf_rel> r_bin_edges[i] ) * (rf_rel<= r_bin_edges[i+1] )
     
             if np.any(bool_in_bin):
                 Cvf_mask[i] = False
@@ -479,7 +480,7 @@ def vector_spatial_correlation(x, y, vec1, vec2, dr, r_max):
     var2x, var2y = vec2
 
     #Add a point at zero
-    r_bin_edges   = np.concatenate( ( [0],np.arange(0, r_max, dr) ) )
+    r_bin_edges   = np.arange(0, r_max, dr) # np.concatenate(([0], np.arange(50, r_max, dr)))
     r_bin_centers = (r_bin_edges[1:] + r_bin_edges[:-1])/2
     
     Nframes = x.shape[0]

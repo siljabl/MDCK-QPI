@@ -15,18 +15,12 @@ from scipy.ndimage import gaussian_filter
 DX = 0.155433 * 64     # µm per pixel (your voxel_to_um(2) * 64)
 DY = 0.155433 * 64     # µm per pixel
 DT = 1.0 / 4.0         # hours per frame
+N_steps = 100
 
-# MATLAB "×3" smoothing: imgaussfilt3(..., 3) -> sigma = 3 voxels in x,y,t
-MATLAB_SIGMA_PIXELS   = 2.05   # sigma in x,y (pixels)
-MATLAB_SIGMA_FRAMES   = 1.2   # sigma in t (frames)
+GAUSS_FILTER_95_WIDTH_UM      = 5.5 * DX
+GAUSS_FILTER_95_WIDTH_FRAMES  = 1.6
 
-# Convert to 95% widths for smooth_stack
-GAUSS_FILTER_95_WIDTH_UM      = 1.96 * MATLAB_SIGMA_PIXELS * DX
-GAUSS_FILTER_95_WIDTH_FRAMES  = 1.96 * MATLAB_SIGMA_FRAMES
-print(GAUSS_FILTER_95_WIDTH_UM)
-print(GAUSS_FILTER_95_WIDTH_FRAMES)
 
-# GAUSS_FILTER_95_WIDTH_UM = 60.0  # 95% width in µm for filtered version
 SYMLIN_LINTHRESH_FACTOR = 1e-3   # factor for symlog linthresh
 
 
@@ -43,8 +37,8 @@ FIGSIZE  = (8, 4)
 FONTSIZE = 24
 
 # parameter sweeps
-SPATIAL_WIDTHS_UM   = np.array([0, 5, 10, 20, 30, 40, 50, 60, 80, 100]) # µm
-TEMP_WIDTHS_FRAMES  = np.array([0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6])  # Gaussian 95% width in frames
+SPATIAL_WIDTHS_UM   = np.linspace(0, 100, N_steps) # µm
+TEMP_WIDTHS_FRAMES  = np.linspace(0, 4,   N_steps) # frames
 
 # ============================================================
 # UTILS
@@ -260,6 +254,9 @@ def spatiotemporal_autocorrelation(
             C_rt[b, :] = C_flat[:, mask].mean(axis=1)
 
     t_lags = np.arange(nt_half + 1) * dt
+
+    # normalize
+    C_rt = C_rt / C_rt[0,0]
     return r_bins, t_lags, C_rt
 
 
@@ -455,20 +452,14 @@ def smooth_stack(stack: np.ndarray,
     """
     Apply separable Gaussian smoothing in time and space:
 
-    - spatial_width_um: 95% width in µm (isotropic in x,y).
-    - temporal_width_frames: 95% width in frames.
+    - spatial_width_um: 
+    - temporal_width_frames: 
       Use 0.0 to disable smoothing in that dimension.
     """
-    if spatial_width_um > 0:
-        sigma_spatial_phys = spatial_width_um / 1.96
-        sigma_spatial_pix  = sigma_spatial_phys / DX
-    else:
-        sigma_spatial_pix = 0.0
 
-    if temporal_width_frames > 0:
-        sigma_t = temporal_width_frames / 1.96
-    else:
-        sigma_t = 0.0
+    sigma_spatial_phys = spatial_width_um
+    sigma_spatial_pix  = sigma_spatial_phys / DX
+    sigma_t = temporal_width_frames
 
     sigma = (sigma_t, sigma_spatial_pix, sigma_spatial_pix)
     if sigma_t == 0.0 and sigma_spatial_pix == 0.0:
@@ -501,24 +492,27 @@ def compute_rms_difference(stack1: np.ndarray,
     return float(num / denom)
 
 
-def sweep_rms(stack1: np.ndarray, stack2: np.ndarray):
+def sweep_rms(stack1: np.ndarray, stack2: np.ndarray, w_r, w_t):
     """Compute RMS vs spatial and temporal smoothing parameters."""
     # vary spatial width, no temporal smoothing
     rms_spatial = []
     for w_um in SPATIAL_WIDTHS_UM:
         rms = compute_rms_difference(stack1, stack2,
                                      spatial_width_um=w_um,
-                                     temporal_width_frames=0.0)
+                                     temporal_width_frames=w_t)
         rms_spatial.append(rms)
-    rms_spatial = np.array(rms_spatial)
+
 
     # vary temporal width, no extra spatial smoothing (beyond DX grid)
     rms_temporal = []
     for w_frames in TEMP_WIDTHS_FRAMES:
         rms = compute_rms_difference(stack1, stack2,
-                                     spatial_width_um=GAUSS_FILTER_95_WIDTH_UM,
+                                     spatial_width_um=w_r,
                                      temporal_width_frames=w_frames)
         rms_temporal.append(rms)
+
+
+    rms_spatial  = np.array(rms_spatial)
     rms_temporal = np.array(rms_temporal)
 
     return rms_spatial, rms_temporal
@@ -534,8 +528,10 @@ def plot_two_correlations(
     title: str
 ):
     """Plot raw and filtered correlations side-by-side with a shared colorbar."""
-    Z_raw = symlog(C_raw)
+    Z_raw  = symlog(C_raw)
     Z_filt = symlog(C_filt)
+    # Z_raw  = (C_raw)
+    # Z_filt = (C_filt)
 
     fig = plt.figure(figsize=FIGSIZE)
     import matplotlib.gridspec as gridspec
@@ -577,16 +573,19 @@ def plot_two_correlations(
     return fig
 
 
-def plot_rms_sweeps(rms_spatial: np.ndarray, rms_temporal: np.ndarray):
+def plot_rms_sweeps(rms_spatial: np.ndarray, rms_temporal: np.ndarray, r_label, t_label):
     """Plot RMS vs spatial and temporal smoothing parameters."""
     fig, axs = plt.subplots(2, 1, figsize=(10, 10))
+    alpha = [0.5, 1, 0.5]
 
-    axs[0].plot(SPATIAL_WIDTHS_UM, rms_spatial, "o-", lw=4, ms=10, label=rf"$r_t = {0/4:0.0f}$ h")
+    for rms, label, a in zip(rms_spatial, t_label, alpha):
+        axs[0].plot(SPATIAL_WIDTHS_UM, rms, "-", lw=4, ms=10, alpha=a, label=rf"$r_t = {label:0.1f}$ h")
     axs[0].set_xlabel(r"$r_{\mathrm{xy}}$ (µm)")
     axs[0].set_title(r"RMS($C_{\boldsymbol{\nabla}(\mathrm{m}\mathbf{v})} − C_{\partial_t\mathrm{m}})$")
     axs[0].legend()
 
-    axs[1].plot(TEMP_WIDTHS_FRAMES * DT, rms_temporal, "o-", lw=4, ms=10, label=rf"$r_{{xy}} = {GAUSS_FILTER_95_WIDTH_UM:0.0f}$ µm")
+    for rms, label, a in zip(rms_temporal, r_label, alpha):
+        axs[1].plot(TEMP_WIDTHS_FRAMES * DT, rms, "-", lw=4, ms=10, alpha=a, label=rf"$r_{{xy}} = {label:0.0f}$ µm")
     axs[1].set_xlabel(r"$r_{\mathrm{t}}$ (h)")
     # axs[1].set_ylabel("RMS(C − C)")
     axs[1].legend()
@@ -628,8 +627,18 @@ def main():
     plt.close(fig2)
 
     # 2) RMS sweeps over smoothing parameters
-    rms_spatial, rms_temporal = sweep_rms(flux_stack, change_stack)
-    fig3 = plot_rms_sweeps(rms_spatial, rms_temporal)
+    rlabel = np.array([25,  GAUSS_FILTER_95_WIDTH_UM, 75])
+    tlabel = np.array([0.8, GAUSS_FILTER_95_WIDTH_FRAMES, 2.4])
+    rms_spatial  = []
+    rms_temporal = []
+    
+    for rl, tl in zip(rlabel, tlabel):
+        rms_r, rms_t = sweep_rms(flux_stack, change_stack, rl, tl)
+
+        rms_spatial.append(rms_r)
+        rms_temporal.append(rms_t)
+
+    fig3 = plot_rms_sweeps(rms_spatial, rms_temporal, rlabel, tlabel)
     fig3.savefig("figs/rms_vs_smoothing.png", dpi=300)
     plt.close(fig3)
 

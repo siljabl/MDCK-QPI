@@ -103,7 +103,7 @@ def plot_ri_field(ax, frame, time, microscope, vmin=1.33, vmax=1.43):
 
 def plot_3D_height(ax, X, Y, Z, vmin=0, vmax=VMAX):
 
-    ax.set(zlim=(0,9))
+    ax.set(zlim=(0,vmax+1))
     ax.set_zticks([])
 
     ax.plot_surface(X, 
@@ -418,7 +418,7 @@ def main():
             X, Y = np.meshgrid(np.arange(3648) * microscope.pix_to_um,
                                np.arange(3648) * microscope.pix_to_um)
 
-            ax.set_box_aspect(((np.ptp(X)), (np.ptp(Y)), 9))
+            ax.set_box_aspect(((np.ptp(X)), (np.ptp(Y)), VMAX+1))
             plot_3D_height(ax, X, Y, Z)
 
             ax.set_xlabel(r"$x~(µm)$", fontsize=24, labelpad=50)

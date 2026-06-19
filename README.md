@@ -11,7 +11,7 @@ Code to segment single cells from 2D refractive index fields, and to analyse the
 Contains configurations for segmenting and calibrating each dataset
 
 ## Scripts:
-- preprocessing: scripts for cross-calibrating refractive index measurements (3D QPI) and height measurments (2D QPI), as well as for segmenting and tracking single cells.
-- analysis:
-- visualization:
-- utils: helper functions and class definitions for all of the above.
+- `preprocessing`: scripts for cross-calibrating refractive index measurements (3D QPI) and height measurments (2D QPI), as well as for segmenting and tracking single cells.
+- `analysis`:
+- `visualization`: scripts for making figures
+- `utils`: helper functions and class definitions for all of the above.

@@ -366,9 +366,9 @@ def main():
 
 
         if args.sigma == 0:
-            vmax = 1500
+            vmax = 240
         else:
-            vmax = 1500 / args.sigma
+            vmax = 240 / args.sigma
 
         fig, ax = plt.subplots(1,3, figsize=(11,3))
         im1 = ax[0].imshow(mass_change, cmap="RdBu_r", origin="lower", extent=[0,567,567,0], vmin=-vmax,     vmax=vmax)
@@ -379,12 +379,12 @@ def main():
         fig.colorbar(im1, ax=ax[1])
         fig.colorbar(im2, ax=ax[2])
 
-        ax[0].set(title=r"Mass change (µm$^3$/h)", xlabel=r"x (µm)", ylabel=r"y (µm)");
-        ax[1].set(title=r"Mass flux (µm$^3$/h)", xlabel=r"x (µm)", ylabel=r"y (µm)");
-        ax[2].set(title=r"Difference (µm$^3$/h)", xlabel=r"x (µm)", ylabel=r"y (µm)");
+        ax[0].set(title=r"Mass change $\left(\frac{\text{µg}}{\text{h}\cdot\text{mm}^2}\right)$", xlabel=r"x (µm)", ylabel=r"y (µm)");
+        ax[1].set(title=r"Mass flux $\left(\frac{\text{µg}}{\text{h}\cdot\text{mm}^2}\right)$", xlabel=r"x (µm)", ylabel=r"y (µm)");
+        ax[2].set(title=r"Difference $\left(\frac{\text{µg}}{\text{h}\cdot\text{mm}^2}\right)$", xlabel=r"x (µm)", ylabel=r"y (µm)");
 
         fig.tight_layout()
-        fig.savefig(f"results/mass_conservation/frames/sigma_{int(args.sigma)}_frame_{frame}-{frame+1}.png")
+        fig.savefig(f"figs/frames/mass_conservation/sigma_{int(args.sigma)}_frame_{frame}-{frame+1}.png")
         plt.close(fig)
 
 

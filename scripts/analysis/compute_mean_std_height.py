@@ -19,7 +19,7 @@ data_path = "../../../../hdd_data/silja/Monolayers/"
 
 
 parser = argparse.ArgumentParser(description="")
-parser.add_argument("path", type=str, help="Path to dataset, as config/dataset")
+parser.add_argument("path",         type=str, help="Path to dataset, as config/dataset")
 parser.add_argument("-t", "--type", type=str, help="Measure type, pixel or disc", default="pixel")
 args = parser.parse_args()
 
@@ -35,7 +35,7 @@ config  = json.load(open(f"configs/{dataset}.json"))
 
 h_pix = load_stack(f"{data_path}height_fields/calibrated/{dataset}/", config, param="height", data_type="cells")
 try:
-    mask = imageio.v2.imread(f"{data_path}masks/{dataset}_mask.tiff")
+    mask = (imageio.v2.imread(f"{data_path}masks/{dataset}_mask.tiff") > 0)
     h_pix = h_pix * mask
 except:
     print("Mask not applied!")

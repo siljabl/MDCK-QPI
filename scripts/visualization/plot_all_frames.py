@@ -425,7 +425,7 @@ def main():
             ax.set_ylabel(r"$y~(µm)$", fontsize=24, labelpad=50)
             
             m = mpl.cm.ScalarMappable(cmap=cm.batlowW)
-            m.set_array(np.linspace(0, 8, 100))
+            m.set_array(np.linspace(0, VMAX, 100))
 
             cbar_ax = fig.add_axes([0.95, 0.15, 0.02, 0.7])
             cbar = fig.colorbar(m, cax=cbar_ax)

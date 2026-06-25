@@ -16,6 +16,5 @@ Contains configurations for segmenting and calibrating each dataset
 - `visualization`: scripts for making figures
 - `utils`: helper functions and class definitions for all of the above.
 
-
 ## Data:
 The data that this repository was used on is on [Zenodo](https://zenodo.org/records/20812823)

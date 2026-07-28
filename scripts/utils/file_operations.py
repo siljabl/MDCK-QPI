@@ -32,6 +32,7 @@ def load_set_of_frames(dir, frame, microscope):
     
 
 def load_stack(dir, config, param="h", data_type="field"):
+    """ Loads stack in SI-units"""
 
     f_min = config[data_type]['fmin']
     f_max = config[data_type]['fmax']
